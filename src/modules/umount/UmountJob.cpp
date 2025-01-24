@@ -63,7 +63,7 @@ unmountTargetMounts( const QString& rootMountPoint )
     std::sort( targetMounts.begin(), targetMounts.end(), MtabInfo::mountPointOrder );
 
     cDebug() << "Read" << targetMounts.count() << "entries from" << targetMountPath;
-    for ( const auto& m : qAsConst( targetMounts ) )
+    for ( const auto& m : std::as_const( targetMounts ) )
     {
         // Returns the program's exit code, so 0 is success and non-0
         // (truthy) is a failure.
@@ -78,6 +78,18 @@ unmountTargetMounts( const QString& rootMountPoint )
                     .arg( m.device, m.mountPoint ) );
         }
     }
+
+    // Last we unmount the root
+    if ( Calamares::Partition::unmount( rootMountPoint, { "-lv" } ) )
+    {
+        return Calamares::JobResult::error(
+            QCoreApplication::translate( UmountJob::staticMetaObject.className(),
+                                         "Could not unmount the root of the target system." ),
+            QCoreApplication::translate( UmountJob::staticMetaObject.className(),
+                                         "The device mounted at '%1' could not be unmounted." )
+                .arg( rootMountPoint ) );
+    }
+
     return Calamares::JobResult::ok();
 }
 
@@ -139,6 +151,7 @@ UmountJob::exec()
             return r;
         }
     }
+
     // For ZFS systems, export the pools
     {
         auto r = exportZFSPools();
