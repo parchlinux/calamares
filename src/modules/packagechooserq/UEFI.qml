@@ -50,7 +50,7 @@ Column {
             width: 600
             height: 90
             anchors.centerIn: parent
-            text: qsTr("<strong>Systemd-boot</strong><br><br>provides a simple experience<br>which will work for most circumstances.<br>This is the default option for <strong>EndeavourOS</strong>.")
+            text: qsTr("<strong>Systemd-boot</strong><br><br>provides a simple experience<br>which will work for most circumstances.<br>This is the default option for <strong>Parch Linux</strong>.")
             font.pointSize: 10
             color: "#ffffff"
             anchors.verticalCenterOffset: 0
