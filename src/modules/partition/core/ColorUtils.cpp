@@ -33,19 +33,19 @@ static const int NUM_NEW_PARTITION_COLORS = 4;
 //Let's try to use the Breeze palette
 static const QColor PARTITION_COLORS[ NUM_PARTITION_COLORS ] = {
     "#2980b9",  //Dark Plasma Blue
-    "#27ae60",  //Dark Icon Green
-    "#c9ce3b",  //Dirty Yellow
+    "#7f3fbf",  //Dark Purple
+    "#ff5454",  //Orange
     "#3daee9",  //Plasma Blue
     "#9b59b6",  //Purple
 };
 static const QColor NEW_PARTITION_COLORS[ NUM_NEW_PARTITION_COLORS ] = {
     "#c0392b",  //Dark Icon Red
-    "#f39c1f",  //Dark Icon Yellow
-    "#f1b7bc",  //Light Salmon
-    "#fed999",  //Light Orange
+    "#3b3b81",  //Dark Blue
+    "#615c5d",  //Light Salmon
+    "#ff8585",  //Light Orange
 };
-static QColor FREE_SPACE_COLOR = "#777777";
-static QColor EXTENDED_COLOR = "#aaaaaa";
+static QColor FREE_SPACE_COLOR = "#6969ea";
+static QColor EXTENDED_COLOR = "#6e5151";
 static QColor UNKNOWN_DISKLABEL_COLOR = "#4d4151";
 
 static QMap< QString, QColor > s_partitionColorsCache;
@@ -98,7 +98,7 @@ colorForPartition( Partition* partition )
     if ( partition->fileSystem().supportGetUUID() != FileSystem::cmdSupportNone
          && !partition->fileSystem().uuid().isEmpty() )
     {
-        if ( partition->fileSystem().type() == FileSystem::Luks || partition->fileSystem().type() == FileSystem::Luks2 )
+        if ( partition->fileSystem().type() == FileSystem::Luks )
         {
             FS::luks& luksFs = dynamic_cast< FS::luks& >( partition->fileSystem() );
             if ( !luksFs.outerUuid().isEmpty() && s_partitionColorsCache.contains( luksFs.outerUuid() ) )
@@ -146,7 +146,7 @@ colorForPartition( Partition* partition )
     if ( partition->fileSystem().supportGetUUID() != FileSystem::cmdSupportNone
          && !partition->fileSystem().uuid().isEmpty() )
     {
-        if ( partition->fileSystem().type() == FileSystem::Luks || partition->fileSystem().type() == FileSystem::Luks2 )
+        if ( partition->fileSystem().type() == FileSystem::Luks )
         {
             FS::luks& luksFs = dynamic_cast< FS::luks& >( partition->fileSystem() );
             if ( !luksFs.outerUuid().isEmpty() )

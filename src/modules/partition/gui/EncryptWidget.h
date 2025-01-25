@@ -13,8 +13,6 @@
 #ifndef ENCRYPTWIDGET_H
 #define ENCRYPTWIDGET_H
 
-#include "compat/CheckBox.h"
-
 #include <QWidget>
 
 #include <kpmcore/fs/filesystem.h>
@@ -38,7 +36,7 @@ public:
 
     explicit EncryptWidget( QWidget* parent = nullptr );
 
-    void setEncryptionCheckbox( bool preCheckEncrypt = false );
+    void setEncryptionCheckbox( bool preCheckEncrypt = false);
     void reset( bool checkVisible = true );
 
     bool isEncryptionCheckboxChecked();
@@ -61,7 +59,7 @@ signals:
 private:
     void updateState( const bool notify = true );
     void onPassphraseEdited();
-    void onCheckBoxStateChanged( Calamares::checkBoxStateType checked );
+    void onCheckBoxStateChanged( int checked );
 
     Ui::EncryptWidget* m_ui;
     Encryption m_state;

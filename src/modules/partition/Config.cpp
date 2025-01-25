@@ -47,12 +47,12 @@ Config::swapChoiceNames()
     // *INDENT-OFF*
     // clang-format off
     static const NamedEnumTable< SwapChoice > names {
-        { QStringLiteral( "none" ), SwapChoice::NoSwap },
-        { QStringLiteral( "small" ), SwapChoice::SmallSwap },
-        { QStringLiteral( "suspend" ), SwapChoice::FullSwap },
-        { QStringLiteral( "reuse" ), SwapChoice::ReuseSwap },
-        { QStringLiteral( "file" ), SwapChoice::SwapFile },
-    };
+                                                      { QStringLiteral( "none" ), SwapChoice::NoSwap },
+                                                      { QStringLiteral( "small" ), SwapChoice::SmallSwap },
+                                                      { QStringLiteral( "suspend" ), SwapChoice::FullSwap },
+                                                      { QStringLiteral( "reuse" ), SwapChoice::ReuseSwap },
+                                                      { QStringLiteral( "file" ), SwapChoice::SwapFile },
+                                                      };
     // clang-format on
     // *INDENT-ON*
 
@@ -65,10 +65,10 @@ Config::luksGenerationNames()
     // *INDENT-OFF*
     // clang-format off
     static const NamedEnumTable< LuksGeneration > names {
-        { QStringLiteral( "luks1" ), LuksGeneration::Luks1 },
-        { QStringLiteral( "luks" ), LuksGeneration::Luks1 },
-        { QStringLiteral( "luks2" ), LuksGeneration::Luks2 },
-    };
+                                                          { QStringLiteral( "luks1" ), LuksGeneration::Luks1 },
+                                                          { QStringLiteral( "luks" ), LuksGeneration::Luks1 },
+                                                          { QStringLiteral( "luks2" ), LuksGeneration::Luks2 },
+                                                          };
     // clang-format on
     // *INDENT-ON*
 
@@ -260,6 +260,12 @@ Config::setReplaceFilesystemChoice( const QString& filesystemName )
     }
 }
 
+void
+Config::setLuksFileSystemType( const LuksGeneration luks)
+{
+    m_luksFileSystemType = luks;
+}
+
 bool
 Config::acceptPartitionTableType( PartitionTable::TableType tableType ) const
 {
@@ -316,6 +322,24 @@ fillGSConfigurationEFI( Calamares::GlobalStorage* gs, const QVariantMap& configu
 
         const auto efiMinimumSize = Calamares::getString( efiConfiguration, "minimumSize" );
         if ( !efiMinimumSize.isEmpty() )
+    if ( configurationMap.contains( "efiSystemPartitionMinSize" ) )
+    {
+        const QString sizeString = Calamares::getString( configurationMap, "efiSystemPartitionMinSize" );
+        Calamares::Partition::PartitionSize part_size = Calamares::Partition::PartitionSize( sizeString );
+        if ( part_size.isValid() )
+        {
+            // Insert once as string, once as a size-in-bytes;
+            // changes to these keys should be synchronized with PartUtils.cpp
+            gs->insert( "efiSystemPartitionMinSize", sizeString );
+            gs->insert( "efiSystemPartitionMinSize_i", part_size.toBytes() );
+        }
+        else
+        {
+            cWarning() << "Minimum EFI partition size" << sizeString << "is invalid, ignored";
+        }
+    }
+
+
         {
             Calamares::Partition::PartitionSize part_size = Calamares::Partition::PartitionSize( efiMinimumSize );
             if ( part_size.isValid() )
@@ -406,7 +430,6 @@ Config::fillConfigurationFSTypes( const QVariantMap& configurationMap )
     }
     m_luksFileSystemType = luksGeneration;
     gs->insert( "luksFileSystemType", luksGenerationNames().find( luksGeneration ) );
-
     Q_ASSERT( !m_eraseFsTypes.isEmpty() );
     Q_ASSERT( m_eraseFsTypes.contains( fsRealName ) );
     m_eraseFsTypeChoice = fsRealName;
@@ -414,6 +437,7 @@ Config::fillConfigurationFSTypes( const QVariantMap& configurationMap )
     Q_EMIT eraseModeFilesystemChanged( m_eraseFsTypeChoice );
     Q_EMIT replaceModeFilesystemChanged( m_replaceFileSystemChoice );
 }
+
 
 void
 Config::setConfigurationMap( const QVariantMap& configurationMap )
@@ -448,11 +472,7 @@ Config::setConfigurationMap( const QVariantMap& configurationMap )
     m_showNotEncryptedBootMessage = Calamares::getBool( configurationMap, "showNotEncryptedBootMessage", true );
     m_requiredPartitionTableType = Calamares::getStringList( configurationMap, "requiredPartitionTableType" );
 
-    {
-        bool bogus = true;
-        const auto lvmConfiguration = Calamares::getSubMap( configurationMap, "lvm", bogus );
-        m_isLVMEnabled = Calamares::getBool( lvmConfiguration, "enable", true);
-    }
+    m_bootloaderVar = Calamares::getString( configurationMap, "efiBootLoaderVar", "" );
 
     Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
     gs->insert( "armInstall", Calamares::getBool( configurationMap, "armInstall", false ) );

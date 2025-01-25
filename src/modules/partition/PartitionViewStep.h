@@ -39,21 +39,6 @@ class PLUGINDLLEXPORT PartitionViewStep : public Calamares::ViewStep
     Q_OBJECT
 
 public:
-    struct FSConflictEntry
-    {
-        QString conflictingPath;
-        QString conflictingFilesystem;
-        QString conflictedPath;
-        QStringList allowableFilesystems;
-
-        FSConflictEntry();
-        FSConflictEntry( const QString& conflictingPathArg,
-                         const QString& conflictingFilesystemArg,
-                         const QString& conflictedPathArg,
-                         QStringList allowableFilesystemsArg );
-        FSConflictEntry( const FSConflictEntry& e ) = default;
-    };
-
     explicit PartitionViewStep( QObject* parent = nullptr );
     ~PartitionViewStep() override;
 
@@ -81,6 +66,8 @@ public:
 
     Calamares::RequirementsList checkRequirements() override;
 
+    QString bootLoader() const { return m_bootloader; }
+
 private:
     void initPartitionCoreModule();
     void continueLoading();
@@ -97,6 +84,8 @@ private:
 
     WaitingWidget* m_waitingWidget;
     QFutureWatcher< void >* m_future;
+
+    QString m_bootloader;
 };
 
 CALAMARES_PLUGIN_FACTORY_DECLARATION( PartitionViewStepFactory )

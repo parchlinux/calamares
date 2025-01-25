@@ -60,8 +60,7 @@ EncryptWidget::EncryptWidget( QWidget* parent )
         m_ui->m_encryptionUnsupportedLabel->show();
     }
 
-    connect(
-        m_ui->m_encryptCheckBox, Calamares::checkBoxStateChangedSignal, this, &EncryptWidget::onCheckBoxStateChanged );
+    connect( m_ui->m_encryptCheckBox, &QCheckBox::stateChanged, this, &EncryptWidget::onCheckBoxStateChanged );
     connect( m_ui->m_passphraseLineEdit, &QLineEdit::textEdited, this, &EncryptWidget::onPassphraseEdited );
     connect( m_ui->m_confirmLineEdit, &QLineEdit::textEdited, this, &EncryptWidget::onPassphraseEdited );
 
@@ -185,10 +184,13 @@ EncryptWidget::updateState( const bool notify )
 
     Encryption newState = state();
 
-    m_state = newState;
-    if ( notify )
+    if ( newState != m_state )
     {
-        Q_EMIT stateChanged( m_state );
+        m_state = newState;
+        if ( notify )
+        {
+            Q_EMIT stateChanged( m_state );
+        }
     }
 }
 
@@ -204,12 +206,12 @@ EncryptWidget::onPassphraseEdited()
 }
 
 void
-EncryptWidget::onCheckBoxStateChanged( Calamares::checkBoxStateType checked )
+EncryptWidget::onCheckBoxStateChanged( int checked )
 {
-    const bool visible = ( checked != Calamares::checkBoxUncheckedValue );
-    m_ui->m_passphraseLineEdit->setVisible( visible );
-    m_ui->m_confirmLineEdit->setVisible( visible );
-    m_ui->m_iconLabel->setVisible( visible );
+    // @p checked is a Qt::CheckState, 0 is "unchecked" and 2 is "checked"
+    m_ui->m_passphraseLineEdit->setVisible( checked );
+    m_ui->m_confirmLineEdit->setVisible( checked );
+    m_ui->m_iconLabel->setVisible( checked );
     m_ui->m_passphraseLineEdit->clear();
     m_ui->m_confirmLineEdit->clear();
     m_ui->m_iconLabel->clear();

@@ -619,7 +619,7 @@ findEssentialLVs( const QList< PartitionCoreModule::DeviceInfo* >& infos )
             continue;
         }
 
-        for ( const auto& j : std::as_const( info->jobs() ) )
+        for ( const auto& j : qAsConst( info->jobs() ) )
         {
             FormatPartitionJob* format = dynamic_cast< FormatPartitionJob* >( j.data() );
             if ( format )
@@ -1220,4 +1220,13 @@ PartitionCoreModule::createSummaryInfo() const
         lst << summaryInfo;
     }
     return lst;
+}
+
+void
+PartitionCoreModule::removeEspMounts()
+{
+    for ( auto const partition : qAsConst( m_efiSystemPartitions ) )
+    {
+        PartitionInfo::setMountPoint( partition, QString() );
+    }
 }

@@ -19,7 +19,7 @@
 #include <QDialog>
 #include <QScopedPointer>
 
-class PartitionCoreModule;
+
 class Device;
 class Partition;
 class PartitionNode;
@@ -39,8 +39,7 @@ private:
      *
      * This does all the shared UI setup.
      */
-    CreatePartitionDialog( PartitionCoreModule* core,
-                           Device* device,
+    CreatePartitionDialog( Device* device,
                            PartitionNode* parentPartition,
                            const QStringList& usedMountPoints,
                            QWidget* parentWidget );
@@ -60,8 +59,7 @@ public:
      * Creating from free space makes a wholly new partition with
      * no flags set at all.
      */
-    CreatePartitionDialog( PartitionCoreModule* core,
-                           Device* device,
+    CreatePartitionDialog( Device* device,
                            const FreeSpace& freeSpacePartition,
                            const QStringList& usedMountPoints,
                            QWidget* parentWidget = nullptr );
@@ -70,8 +68,7 @@ public:
      * A partition previously newly created (e.g. via this dialog
      * and the constructor above) can be re-edited.
      */
-    CreatePartitionDialog( PartitionCoreModule* core,
-                           Device* device,
+    CreatePartitionDialog( Device* device,
                            const FreshPartition& existingNewPartition,
                            const QStringList& usedMountPoints,
                            QWidget* parentWidget = nullptr );
@@ -87,7 +84,6 @@ private Q_SLOTS:
 
 private:
     QScopedPointer< Ui_CreatePartitionDialog > m_ui;
-    PartitionCoreModule* m_core;
     PartitionSizeController* m_partitionSizeController;
     Device* m_device;
     PartitionNode* m_parent;
