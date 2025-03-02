@@ -658,7 +658,7 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
                 return
             
         # boot_loader_install_path points to the physical disk to install GRUB
-        # to. It should start with "/dev/", and be at least as long as the 
+        # to. It should start with "/dev/", and be at least as long as the
         # string "/dev/sda".
         if not boot_loader_install_path.startswith("/dev/") or len(boot_loader_install_path) < 8:
             raise ValueError(f"boot_loader_install_path contains unexpected value '{boot_loader_install_path}'")
