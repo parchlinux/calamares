@@ -389,7 +389,7 @@ def get_efi_suffix_generator(name):
     if name.count("${") > 1:
         raise ValueError("EFI ID {!r} contains multiple generators".format(name))
     import re
-    prefix, generator_name = re.match("(.*)\${([^}]*)}$", name).groups()
+    prefix, generator_name = re.match(r"(.*)\${([^}]*)}$", name).groups()
     if generator_name not in ("SERIAL", "RANDOM", "PHRASE"):
         raise ValueError("EFI suffix {!r} is unknown".format(generator_name))
 
