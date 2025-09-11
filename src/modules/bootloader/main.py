@@ -618,7 +618,6 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
     """
 
     is_zfs = any([is_zfs_root(partition) for partition in partitions])
-
     # zfs needs an environment variable set for grub
     if is_zfs:
         check_target_env_call(["sh", "-c", "echo ZPOOL_VDEV_NAME_PATH=1 >> /etc/environment"])
@@ -628,16 +627,19 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
         efi_bootloader_id = efi_label(efi_directory)
         efi_target, efi_grub_file, efi_boot_file = get_grub_efi_parameters()
 
+        grubinstall_command = [
+            libcalamares.job.configuration["grubInstall"],
+            "--target=" + efi_target,
+            "--efi-directory=" + efi_directory,
+            "--bootloader-id=" + efi_bootloader_id,
+            "--force"]
+
         if is_zfs:
-            check_target_env_call(["sh", "-c", "ZPOOL_VDEV_NAME_PATH=1 " + libcalamares.job.configuration["grubInstall"]
-                                   + " --target=" + efi_target + " --efi-directory=" + efi_directory
-                                   + " --bootloader-id=" + efi_bootloader_id + " --force"])
+            # Needs environment to be set for GRUB, so go via the shell
+            check_target_env_call(["sh", "-c", "ZPOOL_VDEV_NAME_PATH=1 " + " ".join(grubinstall_command)]
         else:
-            check_target_env_call([libcalamares.job.configuration["grubInstall"],
-                                   "--target=" + efi_target,
-                                   "--efi-directory=" + efi_directory,
-                                   "--bootloader-id=" + efi_bootloader_id,
-                                   "--force"])
+            check_target_env_call(grubinstall_command)
+
     else:
         if libcalamares.globalstorage.value("bootLoader") is None and install_hybrid_grub:
             efi_install_path = libcalamares.globalstorage.value("efiSystemPartition")
