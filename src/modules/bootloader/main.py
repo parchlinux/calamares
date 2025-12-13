@@ -636,7 +636,7 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
 
         if is_zfs:
             # Needs environment to be set for GRUB, so go via the shell
-            check_target_env_call(["sh", "-c", "ZPOOL_VDEV_NAME_PATH=1 " + " ".join(grubinstall_command)]
+            check_target_env_call(["sh", "-c", "ZPOOL_VDEV_NAME_PATH=1 " + " ".join(grubinstall_command)])
         else:
             check_target_env_call(grubinstall_command)
 
