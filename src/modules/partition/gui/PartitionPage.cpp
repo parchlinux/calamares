@@ -545,7 +545,7 @@ PartitionPage::editExistingPartition( Device* device, Partition* partition )
 void
 PartitionPage::updateBootLoaderInstallPath()
 {
-    if ( m_isEfi || !m_ui->bootLoaderComboBox->isVisible() )
+    if ( m_isEfi )
     {
         return;
     }
