@@ -15,6 +15,7 @@
 #include "core/PartUtils.h"
 #include "core/PartitionCoreModule.h"
 #include "core/PartitionInfo.h"
+#include "core/SizeUtils.h"
 
 #include "GlobalStorage.h"
 #include "JobQueue.h"
@@ -29,40 +30,6 @@
 #include <QDir>
 
 using namespace Calamares::Units;
-
-// # for start sector num
-// def a_to_l(l_size, sector_num):
-// s_rem = (sector_num-1)%4
-// return (sector_num - s_rem + 3)
-//
-// # for end sector
-// def a_to_u(l_size, sector_num):
-// s_rem = (sector_num+1)%4
-// return (sector_num - s_rem)
-
-// Align start sector number to 4K boundaries
-static quint64 startSectorTo4KAlign(const qint64 logicalSize, const quint64 start_sector) {
-    // if logicalSize == 512 we round sectors number to value that align to 4K
-    if (logicalSize == 512) {
-        // for 512 sector size, sectors number must be divisible by 8
-        quint64 const rem = (start_sector - 1) % 8;
-        return (start_sector - rem + 7);
-    }
-    // Otherwise it is RAID or non standard setup or already align.
-    return start_sector;
-}
-
-// Align end/last sector number to 4K boundaries
-static quint64 endSectorTo4KAlign(const qint64 logicalSize, const quint64 end_sector) {
-    // if logicalSize == 512 we round sectors number to value that align to 4K
-    if (logicalSize == 512) {
-        // for 512 sector size, sectors number must be divisible by 8
-        quint64 const rem = (end_sector + 1) % 8;
-        return (end_sector - rem);
-    }
-    // Otherwise it is RAID or non standard setup or already align.
-    return end_sector;
-}
 
 static quint64
 swapSuggestion( const quint64 availableSpaceB, Config::SwapChoice swap )
@@ -123,9 +90,10 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
     Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
 
     const bool isEfi = PartUtils::isEfiSystem();
-    
+
     bool createHybridBootloaderLayout = false;
-    if ( gs->contains( "createHybridBootloaderLayout" ) ) {
+    if ( gs->contains( "createHybridBootloaderLayout" ) )
+    {
         createHybridBootloaderLayout = gs->value( "createHybridBootloaderLayout" ).toBool();
     }
 
@@ -151,7 +119,7 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
     // last usable sector possibly allowing for secondary GPT using 66 sectors (256 entries)
     // We must ensure here that size will remain multiple of 4K for proper alignment
     const qint64 lastUsableSector_unalign = dev->totalLogical() - ( partType == PartitionTable::gpt ? 67 : 1 );
-    const qint64 lastUsableSector = endSectorTo4KAlign(dev->logicalSize(), lastUsableSector_unalign);
+    const qint64 lastUsableSector = endSectorTo4KAlign( dev->logicalSize(), lastUsableSector_unalign );
 
 
     // Looking up the defaultFsType (which should name a filesystem type)
@@ -234,7 +202,7 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
         // why +1 is here?
         lastSectorForRoot -= suggestedSwapSizeB / sectorSize + 1;
         // Ensure 4k align
-        lastSectorForRoot = endSectorTo4KAlign(sectorSize, lastSectorForRoot);
+        lastSectorForRoot = endSectorTo4KAlign( sectorSize, lastSectorForRoot );
     }
 
     core->layoutApply( dev, firstFreeSector, lastSectorForRoot, o.luksFsType, o.luksPassphrase );
@@ -314,8 +282,8 @@ doReplacePartition( PartitionCoreModule* core, Device* dev, Partition* partition
     firstSector = partition->firstSector();
     lastSector = partition->lastSector();
     // Align partition to 4K (it should be already)
-    lastSector = endSectorTo4KAlign(dev->logicalSize(), lastSector);
-    firstSector = startSectorTo4KAlign(dev->logicalSize(), firstSector);
+    lastSector = endSectorTo4KAlign( dev->logicalSize(), lastSector );
+    firstSector = startSectorTo4KAlign( dev->logicalSize(), firstSector );
 
 
     if ( !partition->roles().has( PartitionRole::Unallocated ) )
