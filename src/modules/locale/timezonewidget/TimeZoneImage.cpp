@@ -198,3 +198,18 @@ TimeZoneImageList::find( QPoint p ) const
     }
     return at( i );
 }
+
+QImage
+TimeZoneImageList::findByOffset( double d ) const
+{
+    const QString desiredZone = QString::number( d, 'f', 1 );
+
+    for ( int i = 0; i < size(); ++i )
+    {
+        if ( zoneNames[ i ] == desiredZone )
+        {
+            return at( i );
+        }
+    }
+    return QImage();
+}
