@@ -867,6 +867,23 @@ def install_refind(efi_directory):
     update_refind_config(efi_directory, installation_root_path)
 
 
+def install_lamboot(efi_directory):
+    """
+    Installs the LamBoot bootloader (a memory-safe Rust UEFI bootloader) by
+    running lamboot-install(8) in the target environment. lamboot-install
+    stages the (optionally Secure Boot-signed) .efi to the EFI system
+    partition, registers a UEFI boot entry, and writes Boot Loader
+    Specification entries for the installed kernels. The command name can be
+    overridden with the "lambootInstall" configuration key.
+
+    :param efi_directory: the EFI system partition mount point in the target.
+    """
+    lamboot_install = libcalamares.job.configuration.get(
+        "lambootInstall", "lamboot-install")
+
+    check_target_env_call([lamboot_install, "--esp", efi_directory, "--no-prompt"])
+
+
 def prepare_bootloader(fw_type, install_hybrid_grub):
     """
     Prepares bootloader.
@@ -916,6 +933,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_secureboot(efi_directory)
     elif efi_boot_loader == "refind" and fw_type == "efi":
         install_refind(efi_directory)
+    elif efi_boot_loader == "lamboot" and fw_type == "efi":
+        install_lamboot(efi_directory)
     elif efi_boot_loader == "grub" or fw_type != "efi":
         install_grub(efi_directory, fw_type, install_hybrid_grub)
     else:
