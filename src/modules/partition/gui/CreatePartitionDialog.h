@@ -86,6 +86,7 @@ private Q_SLOTS:
     void checkMountPointSelection();
 
 private:
+    void updateLuksAlignment();
     QScopedPointer< Ui_CreatePartitionDialog > m_ui;
     PartitionCoreModule* m_core;
     PartitionSizeController* m_partitionSizeController;

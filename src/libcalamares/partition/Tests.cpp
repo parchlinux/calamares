@@ -252,6 +252,20 @@ constexpr auto LOGICAL_SIZE = 512;
     QCOMPARE( alignEndSectorTo4K( LOGICAL_SIZE, 6 ), quint64(-1) );
     QCOMPARE( alignEndSectorTo4K( LOGICAL_SIZE, 7 ), 7 );
     QCOMPARE( alignEndSectorTo4K( LOGICAL_SIZE, 8 ), 7 ); // First value to round down sensibly
+
+    qint64 first = 2048;
+    qint64 last = 41943039;  // typical misaligned GPT last sector
+    alignSectorRangeTo4K( LOGICAL_SIZE, first, last );
+    QCOMPARE( first, 2048 );
+    QCOMPARE( last % 8, 7 );
+    QCOMPARE( ( last - first + 1 ) % 8, 0 );
+
+    first = 50;
+    last = 100;
+    alignSectorRangeTo4K( LOGICAL_SIZE, first, last );
+    QVERIFY( first <= last );
+    QCOMPARE( first % 8, 0 );
+    QCOMPARE( last % 8, 7 );
 }
 
 QTEST_GUILESS_MAIN( PartitionServiceTests )
