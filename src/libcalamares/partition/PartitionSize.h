@@ -162,6 +162,29 @@ alignEndSectorTo4K( const qint64 logicalSize, const quint64 endSector )
     return ( endSector - rem );
 }
 
+/** @brief Adjusts a partition sector range for LUKS2 (cryptsetup --sector-size 4096).
+ *
+ * On 512-byte logical sectors, both @p firstSector and @p lastSector are adjusted
+ * so that the partition size is a multiple of 4096 bytes. If the range becomes
+ * invalid, @p firstSector is moved down to form the smallest valid 4K-aligned range.
+ */
+inline void
+alignSectorRangeTo4K( const qint64 logicalSize, qint64& firstSector, qint64& lastSector )
+{
+    if ( logicalSize != 512 )
+    {
+        return;
+    }
+
+    firstSector = alignStartSectorTo4K( logicalSize, firstSector );
+    lastSector = alignEndSectorTo4K( logicalSize, lastSector );
+    if ( firstSector > lastSector )
+    {
+        firstSector = lastSector >= 7 ? lastSector - 7 : lastSector;
+        firstSector = alignStartSectorTo4K( logicalSize, firstSector );
+    }
+}
+
 }  // namespace Partition
 }  // namespace Calamares
 
