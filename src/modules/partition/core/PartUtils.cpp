@@ -589,7 +589,11 @@ canonicalFilesystemName( const QString& fsName, FileSystem::Type* fsType )
 
     QStringList fsLanguage { QLatin1String( "C" ) };  // Required language list to turn off localization
 
+#if WITH_KPMcore > 0x261100
+    if ( ( type = FileSystem::typeForUntranslatedName( fsName ) ) != FileSystem::Unknown )
+#else
     if ( ( type = FileSystem::typeForName( fsName, fsLanguage ) ) != FileSystem::Unknown )
+#endif
     {
         return fsName;
     }
