@@ -21,6 +21,7 @@
 #include "core/PartitionCoreModule.h"
 #include "gui/PartitionDialogHelpers.h"
 #include "gui/PartitionSizeController.h"
+#include "gui/EncryptWidget.h"
 
 #include "GlobalStorage.h"
 #include "JobQueue.h"
@@ -46,6 +47,15 @@
 
 using Calamares::Partition::untranslatedFS;
 using Calamares::Partition::userVisibleFS;
+
+static bool
+manualPartitionNeedsLuks4KAlignment()
+{
+    Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
+    const QString luksFsType = gs->value( QStringLiteral( "luksFileSystemType" ) ).toString();
+    return Config::luksGenerationNames().find( luksFsType, Config::LuksGeneration::Luks1 )
+        == Config::LuksGeneration::Luks2;
+}
 
 CreatePartitionDialog::CreatePartitionDialog( PartitionCoreModule* core,
                                               Device* device,
@@ -129,6 +139,11 @@ CreatePartitionDialog::CreatePartitionDialog( PartitionCoreModule* core,
              &QComboBox::currentTextChanged,
              this,
              &CreatePartitionDialog::checkMountPointSelection );
+
+    connect( m_ui->encryptWidget,
+             &EncryptWidget::stateChanged,
+             this,
+             [ this ]( EncryptWidget::Encryption ) { updateLuksAlignment(); } );
 
     // Select a default
     m_ui->fsComboBox->setCurrentIndex( defaultFsIndex );
@@ -250,8 +265,14 @@ CreatePartitionDialog::getNewlyCreatedPartition()
     Partition* partition = nullptr;
     QString luksFsType = gs->value( "luksFileSystemType" ).toString();
     QString luksPassphrase = m_ui->encryptWidget->passphrase();
-    if ( m_ui->encryptWidget->state() == EncryptWidget::Encryption::Confirmed && !luksPassphrase.isEmpty()
-         && fsType != FileSystem::Zfs )
+    const bool encryptPartition = m_ui->encryptWidget->state() == EncryptWidget::Encryption::Confirmed
+        && !luksPassphrase.isEmpty() && fsType != FileSystem::Zfs;
+    if ( encryptPartition )
+    {
+        Calamares::Partition::alignSectorRangeTo4K( m_device->logicalSize(), first, last );
+    }
+
+    if ( encryptPartition )
     {
         partition = KPMHelpers::createNewEncryptedPartition(
             m_parent,
@@ -342,6 +363,15 @@ CreatePartitionDialog::updateMountPointUi()
     {
         m_ui->mountPointComboBox->setCurrentText( QString() );
     }
+    updateLuksAlignment();
+}
+
+void
+CreatePartitionDialog::updateLuksAlignment()
+{
+    const bool align = manualPartitionNeedsLuks4KAlignment() && m_ui->encryptWidget->isVisible()
+        && m_ui->encryptWidget->isEncryptionCheckboxChecked();
+    m_partitionSizeController->setAlignForLuks( align );
 }
 
 void
@@ -364,4 +394,5 @@ CreatePartitionDialog::initPartResizerWidget( Partition* partition )
     m_partitionSizeController->init( m_device, partition, color );
     m_partitionSizeController->setPartResizerWidget( m_ui->partResizerWidget );
     m_partitionSizeController->setSpinBox( m_ui->sizeSpinBox );
+    updateLuksAlignment();
 }
