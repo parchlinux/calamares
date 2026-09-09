@@ -31,5 +31,9 @@ QT_WARNING_DISABLE_CLANG( "-Wreserved-identifier" )
 #if __clang_major__ >= 17
 QT_WARNING_DISABLE_CLANG( "-Wunsafe-buffer-usage" )
 #endif
-QT_WARNING_POP
+
+#if __clang_major__ >= 19
+QT_WARNING_DISABLE_CLANG( "-Wctad-maybe-unsupported" )
+#endif
+
 #endif
