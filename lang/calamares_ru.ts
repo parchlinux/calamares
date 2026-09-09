@@ -824,13 +824,13 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/partition/gui/ChoicePage.cpp" line="1582"/>
       <source>Swap (no Hibernate)</source>
       <comment>@label</comment>
-      <translation>Swap (без Гибернации)</translation>
+      <translation>Подкачка (без Гибернации)</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/ChoicePage.cpp" line="1585"/>
       <source>Swap (with Hibernate)</source>
       <comment>@label</comment>
-      <translation>Swap (с Гибернацией)</translation>
+      <translation>Подкачка (с Гибернацией)</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/ChoicePage.cpp" line="1588"/>
@@ -860,12 +860,12 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/jobs/ClearMountsJob.cpp" line="274"/>
       <source>Successfully disabled swap %1.</source>
-      <translation>Успешно отключён раздел подкачки %1.</translation>
+      <translation>Успешно отключена подкачка %1.</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/jobs/ClearMountsJob.cpp" line="300"/>
       <source>Successfully cleared swap %1.</source>
-      <translation>Успешно очищен раздел подкачки %1.</translation>
+      <translation>Успешно очищена подкачка %1.</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/jobs/ClearMountsJob.cpp" line="314"/>
@@ -1062,7 +1062,7 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/summary/Config.cpp" line="35"/>
       <source>Summary</source>
       <comment>@label</comment>
-      <translation>Сводка</translation>
+      <translation>Итог</translation>
     </message>
     <message>
       <location filename="../src/modules/summary/Config.cpp" line="39"/>
@@ -1199,7 +1199,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionDialog.ui" line="59"/>
       <source>Partition &amp;Type:</source>
-      <translation>&amp;Тип раздела:</translation>
+      <translation>&amp;Тип Раздела:</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionDialog.ui" line="71"/>
@@ -1214,7 +1214,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionDialog.ui" line="123"/>
       <source>Fi&amp;le System:</source>
-      <translation>&amp;Файловая система:</translation>
+      <translation>&amp;Файловая Система:</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionDialog.ui" line="155"/>
@@ -1350,12 +1350,12 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionTableDialog.ui" line="76"/>
       <source>Master Boot Record (MBR)</source>
-      <translation>Главная загрузочная запись (MBR)</translation>
+      <translation>Главная Загрузочная Запись (MBR)</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/CreatePartitionTableDialog.ui" line="86"/>
       <source>GUID Partition Table (GPT)</source>
-      <translation>Таблица разделов GUID (GPT)</translation>
+      <translation>Таблица Разделов GUID (GPT)</translation>
     </message>
   </context>
   <context>
@@ -1494,7 +1494,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/DeviceInfoWidget.cpp" line="78"/>
       <source>&lt;br&gt;&lt;br&gt;This partition table type is only advisable on older systems which start from a &lt;strong&gt;BIOS&lt;/strong&gt; boot environment. GPT is recommended in most other cases.&lt;br&gt;&lt;br&gt;&lt;strong&gt;Warning:&lt;/strong&gt; the MBR partition table is an obsolete MS-DOS era standard.&lt;br&gt;Only 4 &lt;em&gt;primary&lt;/em&gt; partitions may be created, and of those 4, one can be an &lt;em&gt;extended&lt;/em&gt; partition, which may in turn contain many &lt;em&gt;logical&lt;/em&gt; partitions.</source>
-      <translation>&lt;br&gt;&lt;br&gt;Этот тип таблицы разделов рекомендуется только для старых систем, запускаемых из среды загрузки &lt;strong&gt;BIOS&lt;/strong&gt;. В большинстве случаев вместо этого лучше использовать GPT.&lt;br&gt;&lt;br&gt;&lt;strong&gt;Внимание:&lt;/strong&gt; MBR стандарт таблицы разделов является устаревшим.&lt;br&gt;Он допускает максимум 4 &lt;em&gt;первичных&lt;/em&gt; раздела, только один из них может быть &lt;em&gt;расширенным&lt;/em&gt; и содержать много &lt;em&gt;логических&lt;/em&gt; под-разделов.</translation>
+      <translation>&lt;br&gt;&lt;br&gt;Этот тип таблицы разделов рекомендуется только для старых систем, запускаемых из среды загрузки &lt;strong&gt;BIOS&lt;/strong&gt;. В большинстве случаев вместо этого лучше использовать GPT.&lt;br&gt;&lt;br&gt;&lt;strong&gt;Внимание:&lt;/strong&gt; формат таблицы разделов MBR может считаться устаревшим.&lt;br&gt;Он допускает максимум 4 &lt;em&gt;первичных&lt;/em&gt; раздела с поддержкой метки загрузки; из них, один раздел можно сделать &lt;em&gt;расширенным&lt;/em&gt; , в таком можно создать много &lt;em&gt;логических&lt;/em&gt; разделов, но без поддержки метки загрузки.</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/DeviceInfoWidget.cpp" line="89"/>
@@ -1612,7 +1612,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/EditExistingPartitionDialog.ui" line="146"/>
       <source>Fi&amp;le System:</source>
-      <translation>&amp;Файловая система:</translation>
+      <translation>&amp;Файловая Система:</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/EditExistingPartitionDialog.ui" line="159"/>
@@ -1837,7 +1837,7 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/finishedq/FinishedQmlViewStep.cpp" line="35"/>
       <source>Finish</source>
       <comment>@label</comment>
-      <translation>Завершить</translation>
+      <translation>Готово</translation>
     </message>
   </context>
   <context>
@@ -1846,7 +1846,7 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/finished/FinishedViewStep.cpp" line="46"/>
       <source>Finish</source>
       <comment>@label</comment>
-      <translation>Завершить</translation>
+      <translation>Готово</translation>
     </message>
   </context>
   <context>
@@ -1931,7 +1931,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/welcome/checker/GeneralRequirements.cpp" line="200"/>
       <source>is running the installer as an administrator (root)</source>
-      <translation>запуск установщика с правами администратора (корневого пользователя/root)</translation>
+      <translation>запуск установщика с правами администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/welcome/checker/GeneralRequirements.cpp" line="204"/>
@@ -2143,7 +2143,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/luksopenswaphookcfg/LOSHJob.cpp" line="35"/>
       <source>Configuring encrypted swap.</source>
-      <translation>Настройка зашифрованного swap.</translation>
+      <translation>Настройка зашифрованной области подкачки.</translation>
     </message>
     <message>
       <location filename="../src/modules/luksopenswaphookcfg/LOSHJob.cpp" line="87"/>
@@ -3020,7 +3020,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="148"/>
       <source>login</source>
-      <translation>логин</translation>
+      <translation>Логин</translation>
     </message>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="223"/>
@@ -3040,7 +3040,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="325"/>
       <source>Choose a password to keep your account safe.</source>
-      <translation>Выберите пароль для защиты вашей учетной записи.</translation>
+      <translation>Выберите пароль для повышения безопасности.</translation>
     </message>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="349"/>
@@ -3083,7 +3083,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="495"/>
       <source>Choose a password for the administrator account.</source>
-      <translation>Выберите пароль администратора</translation>
+      <translation>Выберите пароль администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/users/page_usersetup.ui" line="519"/>
@@ -3122,7 +3122,7 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/PartitionLabelsView.cpp" line="178"/>
       <source>Root</source>
-      <translation>Root</translation>
+      <translation>Корневой Раздел</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/PartitionLabelsView.cpp" line="182"/>
@@ -3140,7 +3140,7 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/partition/gui/PartitionLabelsView.cpp" line="191"/>
       <source>EFI system</source>
       <comment>@label</comment>
-      <translation>Системный раздел EFI</translation>
+      <translation>Системный Раздел EFI</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/PartitionLabelsView.cpp" line="195"/>
@@ -3174,7 +3174,7 @@ The installer will quit and all changes will be lost.</source>
       <location filename="../src/modules/partition/core/PartitionModel.cpp" line="201"/>
       <source>Free Space</source>
       <comment>@title</comment>
-      <translation>Доступное место</translation>
+      <translation>Доступное Место</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/core/PartitionModel.cpp" line="161"/>
@@ -3224,12 +3224,12 @@ The installer will quit and all changes will be lost.</source>
     <message>
       <location filename="../src/modules/partition/gui/PartitionPage.ui" line="55"/>
       <source>&amp;Revert All Changes</source>
-      <translation>&amp;Отменить все изменения</translation>
+      <translation>&amp;Отменить Все Изменения</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/PartitionPage.ui" line="91"/>
       <source>New Partition &amp;Table</source>
-      <translation>Новая &amp;таблица разделов</translation>
+      <translation>Новая &amp;Таблица Разделов</translation>
     </message>
     <message>
       <location filename="../src/modules/partition/gui/PartitionPage.ui" line="111"/>
@@ -3600,7 +3600,7 @@ Output:
     <message>
       <location filename="../src/libcalamares/utils/System.cpp" line="329"/>
       <source>External command failed to finish.</source>
-      <translation>Не удалось завершить внешнюю команду.</translation>
+      <translation>Запуск внешней команды завершился ошибкой.</translation>
     </message>
     <message>
       <location filename="../src/libcalamares/utils/System.cpp" line="330"/>
@@ -4113,7 +4113,7 @@ Output:
     <message>
       <location filename="../src/modules/users/SetPasswordJob.cpp" line="89"/>
       <source>Cannot disable root account.</source>
-      <translation>Невозможно отключить корневую учётную запись (администратора/root).</translation>
+      <translation>Невозможно отключить запись администратора (root).</translation>
     </message>
     <message>
       <location filename="../src/modules/users/SetPasswordJob.cpp" line="90"/>
@@ -5111,7 +5111,7 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="43"/>
       <source>Pick your user name and credentials to login and perform admin tasks</source>
-      <translation>Выберите имя пользователя и пароль для входа в систему и администрирования</translation>
+      <translation>Выберите логин и пароль для входа и администрирования</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="56"/>
@@ -5126,12 +5126,12 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="80"/>
       <source>What name do you want to use to log in?</source>
-      <translation>Какой логин Вы хотите использовать для входа?</translation>
+      <translation>Имя Вашей учётной записи (логин) ?</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="87"/>
       <source>Login name</source>
-      <translation>Логин пользователя</translation>
+      <translation>Учётная запись пользователя (логин)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="116"/>
@@ -5176,7 +5176,7 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="211"/>
       <source>Choose a password to keep your account safe.</source>
-      <translation>Выберите пароль для защиты вашей учётной записи.</translation>
+      <translation>Выберите пароль для повышения безопасности.</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="221"/>
@@ -5196,7 +5196,7 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="297"/>
       <source>Reuse user password as root password</source>
-      <translation>Использовать пароль пользователя как пароль корневого пользователя (администратора/root)</translation>
+      <translation>Использовать пароль пользователя и для администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="305"/>
@@ -5206,17 +5206,17 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="318"/>
       <source>Choose a root password to keep your account safe.</source>
-      <translation>Выберите пароль корневого пользователя (администратора/root) для защиты своей учётной записи.</translation>
+      <translation>Выберите пароль администратора (root) для повышения безопасности.</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="328"/>
       <source>Root password</source>
-      <translation>Пароль корневого пользователя (администратора/root)</translation>
+      <translation>Пароль администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="346"/>
       <source>Repeat root password</source>
-      <translation>Повторите пароль корневого пользователя</translation>
+      <translation>Повторите пароль администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq.qml" line="372"/>
@@ -5259,12 +5259,12 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="79"/>
       <source>What name do you want to use to log in?</source>
-      <translation>Какой логин Вы хотите использовать для входа?</translation>
+      <translation>Имя Вашей учётной записи (логин) ?</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="86"/>
       <source>Login name</source>
-      <translation>Логин пользователя</translation>
+      <translation>Учётная запись пользователя (логин)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="115"/>
@@ -5309,7 +5309,7 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="210"/>
       <source>Choose a password to keep your account safe.</source>
-      <translation>Выберите пароль для защиты вашей учётной записи.</translation>
+      <translation>Выберите пароль для повышения безопасности.</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="220"/>
@@ -5329,7 +5329,7 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="296"/>
       <source>Reuse user password as root password</source>
-      <translation>Использовать пароль пользователя как пароль корневого пользователя (администратора/root)</translation>
+      <translation>Использовать пароль пользователя и для администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="304"/>
@@ -5339,17 +5339,17 @@ ls -l /home
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="317"/>
       <source>Choose a root password to keep your account safe.</source>
-      <translation>Выберите пароль корневого пользователя (администратора/root) для защиты своей учётной записи.</translation>
+      <translation>Выберите пароль администратора (root) для повышения безопасности.</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="327"/>
       <source>Root password</source>
-      <translation>Пароль корневого пользователя (администратора/root)</translation>
+      <translation>Пароль администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="345"/>
       <source>Repeat root password</source>
-      <translation>Повторите пароль корневого пользователя</translation>
+      <translation>Повторите пароль администратора (root)</translation>
     </message>
     <message>
       <location filename="../src/modules/usersq/usersq-qt6.qml" line="371"/>
