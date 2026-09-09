@@ -6,7 +6,7 @@
 # Translators:
 # Aleksey Kabanov <ak099@mail.ru>, 2018
 # ZIzA, 2020
-# Темак, 2023
+# 11fae04751cc88bf0b4daf15dbd7e33d_68cdff3, 2023
 # Victor, 2024
 # Хаос/Chaos <inbox-dpbofnq@mail.ru>, 2025
 # 

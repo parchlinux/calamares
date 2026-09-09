@@ -8,9 +8,9 @@
 # Pietro F. Fontana, 2020
 # Saverio <saverio.brancaccio@gmail.com>, 2020
 # Giuseppe Pignataro (Fastbyte01) <rogepix@gmail.com>, 2021
-# Vincenzo Reale <vinx.reale@gmail.com>, 2022
 # vincenzo sammarco, 2022
 # Paolo Zamponi <feus73@gmail.com>, 2023
+# Vincenzo Reale <smart2128vr@gmail.com>, 2026
 # 
 #, fuzzy
 msgid ""
@@ -19,7 +19,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-11-29 13:55+0100\n"
 "PO-Revision-Date: 2017-08-09 10:34+0000\n"
-"Last-Translator: Paolo Zamponi <feus73@gmail.com>, 2023\n"
+"Last-Translator: Vincenzo Reale <smart2128vr@gmail.com>, 2026\n"
 "Language-Team: Italian (Italy) (https://app.transifex.com/calamares/teams/20061/it_IT/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -172,7 +172,7 @@ msgstr "Nessuna partizione definita per <pre>initcpiocfg</pre>."
 
 #: src/modules/initcpiocfg/main.py:272
 msgid "No root mount point for <pre>initcpiocfg</pre>."
-msgstr ""
+msgstr "Nessun punto di mount per la radice per <pre>initcpiocfg</pre>."
 
 #: src/modules/initramfscfg/main.py:32
 msgid "Configuring initramfs."
@@ -345,7 +345,7 @@ msgstr ""
 
 #: src/modules/services-systemd/main.py:26
 msgid "Configure systemd units"
-msgstr ""
+msgstr "Configura le unità di systemd"
 
 #: src/modules/services-systemd/main.py:64
 msgid "Cannot modify unit"
@@ -361,7 +361,7 @@ msgstr ""
 
 #: src/modules/services-systemd/main.py:66
 msgid "Cannot {_action!s} systemd unit <code>{_name!s}</code>."
-msgstr ""
+msgstr "Impossibile {_action!s} l'unità systemd <code>{name!s}</code>."
 
 #: src/modules/unpackfs/main.py:34
 msgid "Filling up filesystems."
@@ -431,4 +431,4 @@ msgstr "La destinazione del sistema \"{}\" non è una directory"
 
 #: src/modules/zfshostid/main.py:27
 msgid "Copying zfs generated hostid."
-msgstr ""
+msgstr "Copia dell'hostid generato da zfs."
