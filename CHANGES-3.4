@@ -12,8 +12,10 @@ series (2018-05 - 2022-08).
 # 3.4.3 (unreleased)
 
 This release contains contributions from (alphabetically by given name):
+- Alexander A. Klimov
 - Anke Boersma
 - Bhushan Shah
+- olivierpacpac
 
 ## Core ##
 - The mechanism to embed QML in Calamares has changed to fix keyboard-input
@@ -24,6 +26,9 @@ This release contains contributions from (alphabetically by given name):
   can be selected from the drop-down boxes and which don't correspond to
   any country of geographic location. (issue #2489)
 - *partition* supports the latest KPMcore release (thanks Bhushan)
+- *partition* no longer accidentally marks /boot as the EFI boot partition,
+  which could break with systemd-gpt-auto-generator (thanks Alexander)
+- *partition* has improved partition-needs-alignment behavior (thanks olivierpacpac)
 
 
 # 3.4.2 (2026-03-10)
