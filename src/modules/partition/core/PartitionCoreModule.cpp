@@ -989,6 +989,13 @@ PartitionCoreModule::layoutApply( Device* dev,
     QList< Partition* > partList
         = m_partLayout.createPartitions( dev, firstSector, lastSector, luksFsType, luksPassphrase, parent, role );
 
+    // On GPT, KPM_PARTITION_FLAG( Boot ) is an alias for the ESP flag, so
+    // setting it would write the EFI System Partition type onto the root
+    // (or /boot) partition. systemd-gpt-auto-generator would then try to
+    // automount it as VFAT and stall the boot. The legacy "active" flag is
+    // only meaningful on MBR; on GPT, BIOS boot uses a BIOS Boot Partition.
+    const bool isGpt = dev->partitionTable() && dev->partitionTable()->type() == PartitionTable::gpt;
+
     // Partition::mountPoint() tells us where it is mounted **now**, while
     // PartitionInfo::mountPoint() says where it will be mounted in the target system.
     // .. the latter is more interesting.
@@ -1017,8 +1024,9 @@ PartitionCoreModule::layoutApply( Device* dev,
         applyDefaultLabel( part, is_boot, QStringLiteral( "boot" ) );
         if ( ( separate_boot_partition && is_boot( part ) ) || ( !separate_boot_partition && is_root( part ) ) )
         {
-            createPartition(
-                dev, part, part->activeFlags() | ( isEfi ? KPM_PARTITION_FLAG( None ) : KPM_PARTITION_FLAG( Boot ) ) );
+            const auto extraFlag
+                = ( isEfi || isGpt ) ? KPM_PARTITION_FLAG( None ) : KPM_PARTITION_FLAG( Boot );
+            createPartition( dev, part, part->activeFlags() | extraFlag );
         }
         else
         {
