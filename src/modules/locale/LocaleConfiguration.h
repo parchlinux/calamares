@@ -35,14 +35,32 @@ public:  // TODO: private (but need to be public for tests)
     /// @brief Create an empty locale, with nothing set
     explicit LocaleConfiguration();
 
+    /** @brief Where the formats (LC_*) come from when the user picks none
+     *
+     * With FromLocation -- the default -- the formats are guessed from the
+     * country of the selected location, so a Russian-language install in
+     * Germany gets German numbers and dates. With FromLanguage the formats
+     * follow the selected language instead, and the location only sets
+     * the timezone.
+     */
+    enum class Formats
+    {
+        FromLocation,
+        FromLanguage
+    };
+
     /** @brief Create a "sensible" locale configuration for @p language and @p countryCode
      *
      * This method applies some heuristics to pick a good locale (from the list
      * @p availableLocales), along with a good language (for instance, in
      * large countries with many languages, picking a generally used one).
+     *
+     * @p formats selects where the LC_* values are derived from; see Formats.
      */
-    static LocaleConfiguration
-    fromLanguageAndLocation( const QString& language, const QStringList& availableLocales, const QString& countryCode );
+    static LocaleConfiguration fromLanguageAndLocation( const QString& language,
+                                                        const QStringList& availableLocales,
+                                                        const QString& countryCode,
+                                                        Formats formats = Formats::FromLocation );
 
     /// Is this an empty (default-constructed and not modified) configuration?
     bool isEmpty() const;

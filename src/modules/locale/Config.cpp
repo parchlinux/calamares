@@ -326,7 +326,12 @@ Config::automaticLocaleConfiguration() const
     {
         lang = QLocale().name();
     }
-    return LocaleConfiguration::fromLanguageAndLocation( lang, supportedLocales(), currentLocation()->country() );
+    return LocaleConfiguration::fromLanguageAndLocation( lang,
+                                                         supportedLocales(),
+                                                         currentLocation()->country(),
+                                                         m_formatsFollowLanguage
+                                                             ? LocaleConfiguration::Formats::FromLanguage
+                                                             : LocaleConfiguration::Formats::FromLocation );
 }
 
 LocaleConfiguration
@@ -517,6 +522,7 @@ Config::setConfigurationMap( const QVariantMap& configurationMap )
 
     getLocaleGenLines( configurationMap, m_localeGenLines );
     getAdjustLiveTimezone( configurationMap, m_adjustLiveTimezone );
+    m_formatsFollowLanguage = Calamares::getBool( configurationMap, "formatsFollowLanguage", false );
     getStartingTimezone( configurationMap, m_startingTimezone );
     getGeoIP( configurationMap, m_geoip );
 

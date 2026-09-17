@@ -49,6 +49,9 @@ private Q_SLOTS:
     void testLanguageDetection_data();
     void testLanguageDetection();
     void testLanguageDetectionValencia();
+    // Check the formats (LC_*) can be made to follow the language, issue 2184
+    void testFormatsFollowLanguage();
+    void testFormatsFollowLanguageConfig();
 
     // Check that the test-data is available and ok
     void testKDENeonLanguageData();
@@ -378,6 +381,78 @@ LocaleTests::testLanguageDetectionValencia()
         auto r = LocaleConfiguration::fromLanguageAndLocation(
             QStringLiteral( "sr@latin" ), availableLocales, QStringLiteral( "NL" ) );
         QCOMPARE( r.language(), "sr_RS@latin" );
+    }
+}
+
+void
+LocaleTests::testFormatsFollowLanguage()
+{
+    Logger::setupLogLevel( Logger::LOGDEBUG );
+
+    // Dutch language, Spanish location: by default the formats follow the location
+    {
+        auto r = LocaleConfiguration::fromLanguageAndLocation(
+            QStringLiteral( "nl" ), availableLocales, QStringLiteral( "ES" ) );
+        QCOMPARE( r.language(), QStringLiteral( "nl_NL.UTF-8" ) );
+        QCOMPARE( r.lc_numeric, QStringLiteral( "es_ES.UTF-8" ) );
+        QCOMPARE( r.lc_time, QStringLiteral( "es_ES.UTF-8" ) );
+    }
+    // .. and asking explicitly for that is the same thing
+    {
+        auto r = LocaleConfiguration::fromLanguageAndLocation( QStringLiteral( "nl" ),
+                                                               availableLocales,
+                                                               QStringLiteral( "ES" ),
+                                                               LocaleConfiguration::Formats::FromLocation );
+        QCOMPARE( r.language(), QStringLiteral( "nl_NL.UTF-8" ) );
+        QCOMPARE( r.lc_numeric, QStringLiteral( "es_ES.UTF-8" ) );
+    }
+    // .. while following the language sets all of the formats to the language
+    {
+        auto r = LocaleConfiguration::fromLanguageAndLocation( QStringLiteral( "nl" ),
+                                                               availableLocales,
+                                                               QStringLiteral( "ES" ),
+                                                               LocaleConfiguration::Formats::FromLanguage );
+        QCOMPARE( r.language(), QStringLiteral( "nl_NL.UTF-8" ) );
+        QCOMPARE( r.lc_numeric, QStringLiteral( "nl_NL.UTF-8" ) );
+        QCOMPARE( r.lc_time, QStringLiteral( "nl_NL.UTF-8" ) );
+        QCOMPARE( r.lc_measurement, QStringLiteral( "nl_NL.UTF-8" ) );
+    }
+
+    // The case from the issue: Russian language, German location
+    testKDENeonLanguageData();
+    QVERIFY( !m_KDEneonLocales.isEmpty() );
+    {
+        auto r = LocaleConfiguration::fromLanguageAndLocation(
+            QStringLiteral( "ru" ), m_KDEneonLocales, QStringLiteral( "DE" ) );
+        QCOMPARE( r.language(), QStringLiteral( "ru_RU.UTF-8" ) );
+        QCOMPARE( r.lc_time, QStringLiteral( "de_DE.UTF-8" ) );
+    }
+    {
+        auto r = LocaleConfiguration::fromLanguageAndLocation( QStringLiteral( "ru" ),
+                                                               m_KDEneonLocales,
+                                                               QStringLiteral( "DE" ),
+                                                               LocaleConfiguration::Formats::FromLanguage );
+        QCOMPARE( r.language(), QStringLiteral( "ru_RU.UTF-8" ) );
+        QCOMPARE( r.lc_time, QStringLiteral( "ru_RU.UTF-8" ) );
+    }
+}
+
+void
+LocaleTests::testFormatsFollowLanguageConfig()
+{
+    // The setting is off unless the configuration asks for it
+    {
+        Config c;
+        QVERIFY( !c.formatsFollowLanguage() );
+        c.setConfigurationMap( QVariantMap() );
+        QVERIFY( !c.formatsFollowLanguage() );
+    }
+    {
+        Config c;
+        QVariantMap m;
+        m.insert( QStringLiteral( "formatsFollowLanguage" ), true );
+        c.setConfigurationMap( m );
+        QVERIFY( c.formatsFollowLanguage() );
     }
 }
 

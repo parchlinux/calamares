@@ -89,6 +89,9 @@ public:
     /// Restores original timezone, if any
     void cancel();
 
+    /// Do the formats (LC_*) follow the language rather than the location?
+    bool formatsFollowLanguage() const { return m_formatsFollowLanguage; }
+
 private:
     Calamares::Locale::TimeZoneData* currentLocation_c() const
     {
@@ -170,6 +173,15 @@ private:
      * timezone, and the live system can be made to follow that.
      */
     bool m_adjustLiveTimezone;
+
+    /** @brief Should the formats (LC_*) be derived from the language?
+     *
+     * By default the formats are derived from the country of the selected
+     * location; with this setting the distribution can have them follow
+     * the selected language instead. Either way an explicit choice by the
+     * user (from the dialog) wins.
+     */
+    bool m_formatsFollowLanguage = false;
 
     /** @brief The initial timezone (region, zone) specified in the config.
      *

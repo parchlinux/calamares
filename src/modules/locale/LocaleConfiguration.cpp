@@ -146,10 +146,18 @@ identifyBestLanguageMatch( const QString& languageLocale,
 LocaleConfiguration
 LocaleConfiguration::fromLanguageAndLocation( const QString& languageLocale,
                                               const QStringList& availableLocales,
-                                              const QString& countryCode )
+                                              const QString& countryCode,
+                                              Formats formats )
 {
     cDebug() << "Mapping" << languageLocale << "in" << countryCode << "to locale.";
     const auto bestLocale = identifyBestLanguageMatch( languageLocale, availableLocales, countryCode );
+
+    if ( formats == Formats::FromLanguage )
+    {
+        // The location is used for the timezone only, the formats follow the language.
+        cDebug() << Logger::SubEntry << "Formats follow the language" << bestLocale.name();
+        return LocaleConfiguration( bestLocale.name(), bestLocale.name() );
+    }
 
     // The following block was inspired by Ubiquity, scripts/localechooser-apply.
     // No copyright statement found in file, assuming GPL v2 or later.

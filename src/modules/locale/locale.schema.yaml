@@ -25,6 +25,8 @@ properties:
 
     adjustLiveTimezone: { type: boolean, default: true }
 
+    formatsFollowLanguage: { type: boolean, default: false }
+
     localeGenPath: { type: string }
 
     # TODO: refactor, this is reused in welcome

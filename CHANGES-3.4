@@ -16,6 +16,7 @@ This release contains contributions from (alphabetically by given name):
 - Anke Boersma
 - Bhushan Shah
 - olivierpacpac
+- Wehrwolfmann
 
 ## Core ##
 - The mechanism to embed QML in Calamares has changed to fix keyboard-input
@@ -25,6 +26,9 @@ This release contains contributions from (alphabetically by given name):
 - *locale* now has timezone support for Etc/GMT zones (-11 to +13), which
   can be selected from the drop-down boxes and which don't correspond to
   any country of geographic location. (issue #2489)
+- *locale* has a new *formatsFollowLanguage* setting, which lets a distribution
+  derive the formats (LC_*) from the selected language rather than from the
+  country of the selected location. It is off by default. (issue #2184)
 - *partition* supports the latest KPMcore release (thanks Bhushan)
 - *partition* no longer accidentally marks /boot as the EFI boot partition,
   which could break with systemd-gpt-auto-generator (thanks Alexander)
