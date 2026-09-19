@@ -354,6 +354,8 @@ PartitionCoreModule::doInit()
     {
         scanForEfiSystemPartitions();
     }
+
+    emit initCompleted();
 }
 
 PartitionCoreModule::~PartitionCoreModule()
