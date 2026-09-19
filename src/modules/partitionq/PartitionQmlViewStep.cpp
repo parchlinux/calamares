@@ -108,7 +108,11 @@ PartitionQmlViewStep::setConfigurationMap( const QVariantMap& configurationMap )
                  this->m_future = nullptr;
              } );
 
+#if QT_VERSION < QT_VERSION_CHECK( 6, 0, 0 )
     QFuture< void > future = QtConcurrent::run( this, &PartitionQmlViewStep::initPartitionCoreModule );
+#else
+    QFuture< void > future = QtConcurrent::run( &PartitionQmlViewStep::initPartitionCoreModule, this );
+#endif
     m_future->setFuture( future );
 }
 
