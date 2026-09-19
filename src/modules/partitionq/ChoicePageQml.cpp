@@ -28,7 +28,7 @@
 #include "JobQueue.h"
 #include "partition/PartitionIterator.h"
 #include "partition/PartitionQuery.h"
-#include "utils/CalamaresUtilsGui.h"
+#include "utils/Gui.h"
 #include "utils/Logger.h"
 #include "utils/Retranslator.h"
 #include "utils/Units.h"
@@ -41,9 +41,9 @@
 #include <QFutureWatcher>
 #include <QtConcurrent/QtConcurrent>
 
-using CalamaresUtils::Partition::findPartitionByPath;
-using CalamaresUtils::Partition::isPartitionFreeSpace;
-using CalamaresUtils::Partition::PartitionIterator;
+using Calamares::Partition::findPartitionByPath;
+using Calamares::Partition::isPartitionFreeSpace;
+using Calamares::Partition::PartitionIterator;
 using InstallChoice = Config::InstallChoice;
 using SwapChoice = Config::SwapChoice;
 
@@ -346,7 +346,7 @@ ChoicePageQml::applyActionChoice( InstallChoice choice )
                                                                   m_config->eraseFsType(),
                                                                   m_encryptPassphrase,
                                                                   gs->value( "efiSystemPartition" ).toString(),
-                                                                  CalamaresUtils::GiBtoBytes(
+                                                                  Calamares::GiBtoBytes(
                                                                       gs->value( "requiredStorageGiB" ).toDouble() ),
                                                                   m_config->swapChoice() };
 
