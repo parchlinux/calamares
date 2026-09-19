@@ -25,9 +25,8 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWidget>
-#if QT_VERSION > QT_VERSION_CHECK( 6, 0, 0 )
 #include <QQuickWindow>
-#endif
+#include <QWindow>
 
 #include <QVBoxLayout>
 #include <QWidget>
@@ -63,6 +62,39 @@ changeQMLState( QMLAction action, QQuickItem* item )
     }
 }
 
+static void
+installQuickWidgetFocusBridge( QQuickWidget* quickWidget )
+{
+    if ( !quickWidget )
+    {
+        return;
+    }
+    QQuickWindow* quickWindow = quickWidget->quickWindow();
+    if ( !quickWindow )
+    {
+        return;
+    }
+
+    QObject::connect( quickWindow, &QQuickWindow::focusObjectChanged,
+                      quickWidget, [ quickWidget ]( QObject* focusObject )
+    {
+        if ( !focusObject )
+        {
+            return;
+        }
+
+        QQuickItem* item = qobject_cast< QQuickItem* >( focusObject );
+        if ( item && ( item->flags() & QQuickItem::ItemAcceptsInputMethod ) )
+        {
+            quickWidget->setFocus( Qt::OtherFocusReason );
+            if ( quickWidget->window() && quickWidget->window()->windowHandle() )
+            {
+                quickWidget->window()->windowHandle()->requestActivate();
+            }
+        }
+    }, Qt::UniqueConnection );
+}
+
 namespace Calamares
 {
 
@@ -77,6 +109,8 @@ QmlViewStep::QmlViewStep( QObject* parent )
     m_qmlWidget->setResizeMode( QQuickWidget::SizeRootObjectToView );
     m_qmlWidget->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
     m_qmlEngine = m_qmlWidget->engine();
+
+    installQuickWidgetFocusBridge( m_qmlWidget );
 
     QVBoxLayout* layout = new QVBoxLayout( m_widget );
     layout->addWidget( m_spinner );
@@ -130,6 +164,11 @@ QmlViewStep::onActivate()
     if ( m_qmlObject )
     {
         changeQMLState( QMLAction::Start, m_qmlObject );
+    }
+    if ( m_qmlWidget )
+    {
+        installQuickWidgetFocusBridge( m_qmlWidget );
+        m_qmlWidget->setFocus( Qt::OtherFocusReason );
     }
 }
 
