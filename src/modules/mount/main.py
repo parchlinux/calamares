@@ -17,6 +17,7 @@ import tempfile
 import subprocess
 import os
 import re
+import time
 
 import libcalamares
 
@@ -294,7 +295,22 @@ def mount_partition(root_mount_point, partition, partitions, mount_options, moun
             if s["mountPoint"] == "/":
                 # insert the root subvolume into global storage
                 libcalamares.globalstorage.insert("btrfsRootSubvolume", s["subvolume"])
-        subprocess.check_call(["umount", "-v", root_mount_point])
+        # Ensure filesystem operations are flushed before unmounting
+        subprocess.run(["sync"])
+
+        # Retry unmounting in case udev/indexers/udisks2 briefly hold handles
+        unmounted = False
+        for _ in range(5):
+            res = subprocess.run(["umount", root_mount_point], check=False)
+            if res.returncode == 0:
+                unmounted = True
+                break
+            time.sleep(0.5)
+
+        if not unmounted:
+            # Fallback to lazy unmount if a stubborn background process holds it
+            libcalamares.utils.warning(f"umount {root_mount_point} failed, falling back to lazy unmount")
+            subprocess.check_call(["umount", "-l", root_mount_point])
 
         device = partition["device"]
 
