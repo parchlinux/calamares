@@ -53,8 +53,6 @@ class QStandardItemModel;
 class PartitionCoreModule : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY( QAbstractListModel* deviceModel READ deviceModel CONSTANT FINAL )
-    Q_PROPERTY( QStandardItemModel* bootLoaderModel READ bootLoaderModel CONSTANT FINAL )
 
 public:
     /**
@@ -253,7 +251,6 @@ Q_SIGNALS:
     void isDirtyChanged( bool value );
     void reverted();
     void deviceReverted( Device* device );
-    void initCompleted();
 
 private:
     void refreshAfterModelChange();

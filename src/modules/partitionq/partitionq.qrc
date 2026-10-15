@@ -1,7 +1,0 @@
-<RCC>
-    <qresource>
-        <file>partitionq.qml</file>
-        <file>ChoosePage.qml</file>
-        <file>images/partition-table.svg</file>
-    </qresource>
-</RCC>
