@@ -61,6 +61,7 @@
 #include <QDir>
 #include <QFutureWatcher>
 #include <QStandardItemModel>
+#include <QThread>
 #include <QtConcurrent/QtConcurrent>
 
 using Calamares::Partition::isPartitionFreeSpace;
@@ -1105,27 +1106,40 @@ PartitionCoreModule::revertDevice( Device* dev, bool individualRevert )
     devInfo->forgetChanges();
     CoreBackend* backend = CoreBackendManager::self()->backend();
     Device* newDev = backend->scanDevice( devInfo->device->deviceNode() );
-    devInfo->device.reset( newDev );
-    devInfo->partitionModel->init( newDev, m_osproberLines );
 
-    m_deviceModel->swapDevice( dev, newDev );
-
-    QList< Device* > devices;
-    for ( DeviceInfo* const info : m_deviceInfos )
+    auto applyRevert = [ this, dev, devInfo, newDev, individualRevert ]()
     {
-        if ( info && !info->device.isNull() && info->device->type() == Device::Type::Disk_Device )
+        devInfo->device.reset( newDev );
+        devInfo->partitionModel->init( newDev, m_osproberLines );
+
+        m_deviceModel->swapDevice( dev, newDev );
+
+        QList< Device* > devices;
+        for ( DeviceInfo* const info : m_deviceInfos )
         {
-            devices.append( info->device.data() );
+            if ( info && !info->device.isNull() && info->device->type() == Device::Type::Disk_Device )
+            {
+                devices.append( info->device.data() );
+            }
         }
-    }
 
-    m_bootLoaderModel->init( devices );
+        m_bootLoaderModel->init( devices );
 
-    if ( individualRevert )
+        if ( individualRevert )
+        {
+            refreshAfterModelChange();
+        }
+        Q_EMIT deviceReverted( newDev );
+    };
+
+    if ( QThread::currentThread() != this->thread() )
     {
-        refreshAfterModelChange();
+        QMetaObject::invokeMethod( this, applyRevert, Qt::BlockingQueuedConnection );
     }
-    Q_EMIT deviceReverted( newDev );
+    else
+    {
+        applyRevert();
+    }
 }
 
 

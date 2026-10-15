@@ -522,12 +522,15 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                         QMutexLocker locker( &m_coreMutex );
                         m_core->revertDevice( selectedDevice() );
                     } ),
-                [ = ]
+                [ this, options, choice ]
                 {
                     PartitionActions::doAutopartition( m_core, selectedDevice(), options );
                     Q_EMIT deviceChosen();
+                    updateNextEnabled();
+                    updateActionChoicePreview( choice );
                 },
                 this );
+            return;
         }
         else
         {
@@ -546,8 +549,22 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                         QMutexLocker locker( &m_coreMutex );
                         m_core->revertDevice( selectedDevice() );
                     } ),
-                [] {},
+                [ this, choice, priorSelection ]
+                {
+                    connect( m_beforePartitionBarsView->selectionModel(),
+                             &QItemSelectionModel::currentRowChanged,
+                             this,
+                             &ChoicePage::onPartitionToReplaceSelected,
+                             Qt::UniqueConnection );
+                    if ( priorSelection.isValid() )
+                    {
+                        m_beforePartitionBarsView->selectionModel()->setCurrentIndex( priorSelection, QItemSelectionModel::Select );
+                    }
+                    updateNextEnabled();
+                    updateActionChoicePreview( choice );
+                },
                 this );
+            return;
         }
         connect( m_beforePartitionBarsView->selectionModel(),
                  &QItemSelectionModel::currentRowChanged,
@@ -574,12 +591,16 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                     } ),
                 [ this ]
                 {
-                    // We need to reupdate after reverting because the splitter widget is
-                    // not a true view.
-                    updateActionChoicePreview( m_config->installChoice() );
+                    connect( m_beforePartitionBarsView->selectionModel(),
+                             &QItemSelectionModel::currentRowChanged,
+                             this,
+                             &ChoicePage::doAlongsideSetupSplitter,
+                             Qt::UniqueConnection );
                     updateNextEnabled();
+                    updateActionChoicePreview( m_config->installChoice() );
                 },
                 this );
+            return;
         }
 
         connect( m_beforePartitionBarsView->selectionModel(),
@@ -598,8 +619,13 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                         QMutexLocker locker( &m_coreMutex );
                         m_core->revertDevice( selectedDevice() );
                     } ),
-                [] {},
+                [ this, choice ]
+                {
+                    updateNextEnabled();
+                    updateActionChoicePreview( choice );
+                },
                 this );
+            return;
         }
         break;
     case InstallChoice::NoChoice:

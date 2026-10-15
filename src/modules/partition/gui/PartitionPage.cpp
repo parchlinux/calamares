@@ -646,6 +646,11 @@ PartitionPage::updateFromCurrentDevice()
 void
 PartitionPage::onPartitionModelReset()
 {
+    if ( m_ui && m_ui->partitionTreeView && m_ui->partitionTreeView->selectionModel() )
+    {
+        m_ui->partitionTreeView->selectionModel()->clearSelection();
+        m_ui->partitionTreeView->selectionModel()->clearCurrentIndex();
+    }
     m_ui->partitionTreeView->expandAll();
     updateButtons();
     updateBootLoaderIndex();
