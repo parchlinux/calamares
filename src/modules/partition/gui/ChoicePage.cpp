@@ -916,23 +916,30 @@ ChoicePage::doReplaceSelectedPartition( const QModelIndex& current )
 
                         Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
 
-                        PartitionActions::doReplacePartition( m_core,
-                                                              selectedDevice(),
-                                                              selectedPartition,
-                                                              { gs->value( "defaultPartitionType" ).toString(),
-                                                                m_config->replaceModeFilesystem(),
-                                                                m_config->luksFileSystemType(),
-                                                                m_encryptWidget->passphrase() } );
-                        Partition* homePartition = findPartitionByPath( { selectedDevice() }, *homePartitionPath );
-
-                        if ( homePartition && doReuseHomePartition )
+                        if ( m_reuseHomeCheckBox->isChecked() && homePartitionPath->isEmpty() )
                         {
-                            PartitionInfo::setMountPoint( homePartition, "/home" );
-                            gs->insert( "reuseHome", true );
+                            PartitionActions::doRefreshPartition( m_core, selectedDevice(), selectedPartition );
                         }
                         else
                         {
-                            gs->insert( "reuseHome", false );
+                            PartitionActions::doReplacePartition( m_core,
+                                                                  selectedDevice(),
+                                                                  selectedPartition,
+                                                                  { gs->value( "defaultPartitionType" ).toString(),
+                                                                    m_config->replaceModeFilesystem(),
+                                                                    m_config->luksFileSystemType(),
+                                                                    m_encryptWidget->passphrase() } );
+                            Partition* homePartition = findPartitionByPath( { selectedDevice() }, *homePartitionPath );
+
+                            if ( homePartition && doReuseHomePartition )
+                            {
+                                PartitionInfo::setMountPoint( homePartition, "/home" );
+                                gs->insert( "reuseHome", true );
+                            }
+                            else
+                            {
+                                gs->insert( "reuseHome", false );
+                            }
                         }
                     }
                 }
@@ -940,12 +947,31 @@ ChoicePage::doReplaceSelectedPartition( const QModelIndex& current )
             m_reuseHomeCheckBox->isChecked() ),
         [ this, homePartitionPath ]
         {
-            m_reuseHomeCheckBox->setVisible( !homePartitionPath->isEmpty() );
             if ( !homePartitionPath->isEmpty() )
             {
+                m_reuseHomeCheckBox->setVisible( true );
                 m_reuseHomeCheckBox->setText( tr( "Reuse %1 as home partition for %2", "@label" )
                                                   .arg( *homePartitionPath )
                                                   .arg( Calamares::Branding::instance()->shortProductName() ) );
+            }
+            else
+            {
+                // In-place refresh mode: if partition has an existing rootfs, allow keeping /home
+                QString currentPartPath = m_beforePartitionBarsView->currentIndex().data( PartitionModel::PartitionPathRole ).toString();
+                bool hasLinux = false;
+                for ( const OsproberEntry& entry : m_core->osproberEntries() )
+                {
+                    if ( entry.path == currentPartPath )
+                    {
+                        hasLinux = true;
+                        break;
+                    }
+                }
+                m_reuseHomeCheckBox->setVisible( hasLinux );
+                if ( hasLinux )
+                {
+                    m_reuseHomeCheckBox->setText( tr( "Parch Refresh: Reinstall system files, keep /home and personal data", "@label" ) );
+                }
             }
             delete homePartitionPath;
 

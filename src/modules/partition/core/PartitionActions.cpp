@@ -292,4 +292,21 @@ doReplacePartition( PartitionCoreModule* core, Device* dev, Partition* partition
     core->dumpQueue();
 }
 
+void
+doRefreshPartition( PartitionCoreModule* core, Device* dev, Partition* partition )
+{
+    Q_UNUSED( dev );
+    Q_UNUSED( core );
+    cDebug() << "doRefreshPartition for device" << partition->partitionPath();
+    PartitionInfo::setMountPoint( partition, QStringLiteral( "/" ) );
+    PartitionInfo::setFormat( partition, false );
+
+    Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
+    if ( gs )
+    {
+        gs->insert( "refreshInstall", true );
+        gs->insert( "reuseHome", true );
+    }
+}
+
 }  // namespace PartitionActions

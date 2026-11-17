@@ -90,6 +90,13 @@ void doReplacePartition( PartitionCoreModule* core,
                          Device* dev,
                          Partition* partition,
                          Choices::ReplacePartitionOptions options );
+
+/**
+ * @brief Sets up non-destructive refresh install on the given partition.
+ * Preserves the filesystem and /home contents without formatting.
+ */
+void doRefreshPartition( PartitionCoreModule* core, Device* dev, Partition* partition );
+
 }  // namespace PartitionActions
 
 #endif  // PARTITIONACTIONS_H
