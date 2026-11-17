@@ -738,14 +738,20 @@ GeneralRequirements::checkDiskHealth()
             int exitCode = res.getExitCode();
             QString output = res.getOutput();
 
-            // Bit 3 (0x08) indicates SMART status check returned "DISK FAILING"
-            // Also check for explicit FAILED keyword in self-assessment output
-            if ( ( exitCode & 8 ) != 0 || output.contains( QStringLiteral( "FAILED" ), Qt::CaseInsensitive )
-                 || output.contains( QStringLiteral( "PRE-FAIL" ), Qt::CaseInsensitive ) )
+            // Ignore permission errors, missing devices or sleep states (Bit 1 is set, or exitCode == 2)
+            if ( ( exitCode & 2 ) == 0 && !output.contains( QStringLiteral( "Permission denied" ), Qt::CaseInsensitive ) )
             {
-                cWarning() << "smartctl detected failing disk on" << devNode << "exit code:" << exitCode;
-                failingDisks.append( name );
-                continue;
+                // Bit 3 (0x08) indicates SMART status check returned "DISK FAILING"
+                if ( ( exitCode & 8 ) != 0
+                     || output.contains( QStringLiteral( "result: FAILED" ), Qt::CaseInsensitive )
+                     || output.contains( QStringLiteral( "Health Status: FAILED" ), Qt::CaseInsensitive )
+                     || output.contains( QStringLiteral( "overall-health self-assessment test result: FAILED" ), Qt::CaseInsensitive )
+                     || output.contains( QStringLiteral( "PRE-FAIL" ), Qt::CaseInsensitive ) )
+                {
+                    cWarning() << "smartctl detected failing disk on" << devNode << "exit code:" << exitCode;
+                    failingDisks.append( name );
+                    continue;
+                }
             }
         }
 
