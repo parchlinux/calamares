@@ -16,6 +16,7 @@
 #include "utils/System.h"
 
 #include "core/KPMHelpers.h"
+#include "core/PartUtils.h"
 
 #include <kpmcore/core/device.h>
 #include <kpmcore/core/partition.h>
@@ -79,6 +80,25 @@ CreatePartitionTableJob::exec()
 
         auto mountResult = Calamares::System::runCommand( { "mount" }, std::chrono::seconds( 30 ) );
         cDebug() << Logger::SubEntry << "mount output:\n" << Logger::NoQuote << mountResult.getOutput();
+    }
+
+    if ( PartUtils::isSolidState( m_device->deviceNode() ) && PartUtils::supportsDiscard( m_device->deviceNode() ) )
+    {
+        cDebug() << "Solid-state storage with discard capability detected on" << m_device->deviceNode()
+                 << "- issuing hardware block discard (blkdiscard)...";
+        auto discardResult = Calamares::System::runCommand(
+            { "blkdiscard", "-f", m_device->deviceNode() }, std::chrono::seconds( 60 ) );
+        if ( discardResult.getExitCode() == 0 )
+        {
+            cDebug() << "Hardware blkdiscard completed successfully on" << m_device->deviceNode();
+            Calamares::System::runCommand( { "udevadm", "settle" }, std::chrono::seconds( 10 ) );
+        }
+        else
+        {
+            cWarning() << "blkdiscard returned non-zero code" << discardResult.getExitCode()
+                       << "on" << m_device->deviceNode()
+                       << "- continuing partition table creation without discard.";
+        }
     }
 
     return KPMHelpers::execute(

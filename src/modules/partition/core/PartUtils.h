@@ -149,6 +149,16 @@ bool isEfiBootable( const Partition* candidate );
  */
 QString canonicalFilesystemName( const QString& fsName, FileSystem::Type* fsType );
 
+/**
+ * @brief Checks if the block device is solid-state (SSD / NVMe / eMMC).
+ */
+bool isSolidState( const QString& deviceNode );
+
+/**
+ * @brief Checks if the block device supports hardware discard / TRIM.
+ */
+bool supportsDiscard( const QString& deviceNode );
+
 }  // namespace PartUtils
 
 #endif  // PARTUTILS_H

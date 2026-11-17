@@ -637,4 +637,40 @@ canonicalFilesystemName( const QString& fsName, FileSystem::Type* fsType )
     return QStringLiteral( "ext4" );
 }
 
+bool
+isSolidState( const QString& deviceNode )
+{
+    QString canonical = QFileInfo( deviceNode ).canonicalFilePath();
+    QString devName = QFileInfo( canonical ).fileName();
+    if ( devName.isEmpty() )
+    {
+        return false;
+    }
+    QFile f( QStringLiteral( "/sys/block/%1/queue/rotational" ).arg( devName ) );
+    if ( f.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        return f.readAll().trimmed() == "0";
+    }
+    return false;
+}
+
+bool
+supportsDiscard( const QString& deviceNode )
+{
+    QString canonical = QFileInfo( deviceNode ).canonicalFilePath();
+    QString devName = QFileInfo( canonical ).fileName();
+    if ( devName.isEmpty() )
+    {
+        return false;
+    }
+    QFile f( QStringLiteral( "/sys/block/%1/queue/discard_max_bytes" ).arg( devName ) );
+    if ( f.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        bool ok = false;
+        qulonglong maxBytes = f.readAll().trimmed().toULongLong( &ok );
+        return ok && ( maxBytes > 0 );
+    }
+    return false;
+}
+
 }  // namespace PartUtils

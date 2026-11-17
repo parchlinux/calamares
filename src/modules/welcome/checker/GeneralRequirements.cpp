@@ -37,6 +37,7 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QStandardPaths>
 
 #include <unistd.h>  //geteuid
 
@@ -105,6 +106,7 @@ GeneralRequirements::checkRequirements()
     MaybeChecked hasInternet;
     MaybeChecked isRoot;
     MaybeChecked secureBootDisabled;
+    MaybeChecked diskHealthOk;
     bool enoughScreen = availableSize.isValid() && ( availableSize.width() >= Calamares::windowMinimumWidth )
         && ( availableSize.height() >= Calamares::windowMinimumHeight );
 
@@ -140,6 +142,11 @@ GeneralRequirements::checkRequirements()
         secureBootDisabled = checkSecureBoot();
     }
 
+    if ( m_entriesToCheck.contains( "diskhealth" ) )
+    {
+        diskHealthOk = checkDiskHealth();
+    }
+
     using TNum = Logger::DebugRow< const char*, qint64 >;
     using TR = Logger::DebugRow< const char*, MaybeChecked >;
     // clang-format off
@@ -151,7 +158,8 @@ GeneralRequirements::checkRequirements()
              << TR( "hasPower", hasPower )
              << TR( "hasInternet", hasInternet )
              << TR( "isRoot", isRoot )
-             << TR( "secureBootDisabled", secureBootDisabled );
+             << TR( "secureBootDisabled", secureBootDisabled )
+             << TR( "diskHealthOk", diskHealthOk );
     // clang-format on
 
     Calamares::RequirementsList checkEntries;
@@ -206,6 +214,21 @@ GeneralRequirements::checkRequirements()
                                    [] { return tr( "Secure Boot is disabled" ); },
                                    [] { return tr( "Secure Boot is enabled. Please disable Secure Boot in UEFI firmware settings before proceeding." ); },
                                    secureBootDisabled,
+                                   required } );
+        }
+        else if ( entry == "diskhealth" )
+        {
+            checkEntries.append( { entry,
+                                   [] { return tr( "Storage drives are healthy (SMART)" ); },
+                                   [ failed = m_failedDiskDetails ]
+                                   {
+                                       if ( !failed.isEmpty() )
+                                       {
+                                           return tr( "Disk health warnings detected on %1. Hardware failure or data loss may occur." ).arg( failed );
+                                       }
+                                       return tr( "Storage drive hardware health check reported warnings." );
+                                   },
+                                   diskHealthOk,
                                    required } );
         }
         else if ( entry == "internet" )
@@ -660,4 +683,110 @@ bool
 GeneralRequirements::checkIsRoot()
 {
     return !geteuid();
+}
+
+bool
+GeneralRequirements::checkDiskHealth()
+{
+    m_failedDiskDetails.clear();
+    QStringList failingDisks;
+
+    const QDir blockDir( QStringLiteral( "/sys/block" ) );
+    if ( !blockDir.exists() )
+    {
+        return true;
+    }
+
+    const auto entries = blockDir.entryList( QDir::Dirs | QDir::NoDotAndDotDot );
+    const QString smartctlBin = QStandardPaths::findExecutable( QStringLiteral( "smartctl" ) );
+
+    for ( const auto& name : entries )
+    {
+        // Skip non-physical / pseudo block devices
+        if ( name.startsWith( QStringLiteral( "loop" ) )
+             || name.startsWith( QStringLiteral( "ram" ) )
+             || name.startsWith( QStringLiteral( "zram" ) )
+             || name.startsWith( QStringLiteral( "dm-" ) )
+             || name.startsWith( QStringLiteral( "sr" ) )
+             || name.startsWith( QStringLiteral( "nbd" ) ) )
+        {
+            continue;
+        }
+
+        // Must have device subsystem link
+        if ( !QFile::exists( blockDir.absoluteFilePath( name + QStringLiteral( "/device" ) ) ) )
+        {
+            continue;
+        }
+
+        // Skip read-only live media or write-protected drives
+        QFile roFile( blockDir.absoluteFilePath( name + QStringLiteral( "/ro" ) ) );
+        if ( roFile.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            if ( roFile.readAll().trimmed() == QStringLiteral( "1" ) )
+            {
+                continue;
+            }
+        }
+
+        const QString devNode = QStringLiteral( "/dev/" ) + name;
+
+        // 1. If smartctl is present and executable, check SMART self-assessment
+        if ( !smartctlBin.isEmpty() )
+        {
+            auto res = Calamares::System::runCommand( { smartctlBin, "-H", devNode }, std::chrono::seconds( 5 ) );
+            int exitCode = res.getExitCode();
+            QString output = res.getOutput();
+
+            // Bit 3 (0x08) indicates SMART status check returned "DISK FAILING"
+            // Also check for explicit FAILED keyword in self-assessment output
+            if ( ( exitCode & 8 ) != 0 || output.contains( QStringLiteral( "FAILED" ), Qt::CaseInsensitive )
+                 || output.contains( QStringLiteral( "PRE-FAIL" ), Qt::CaseInsensitive ) )
+            {
+                cWarning() << "smartctl detected failing disk on" << devNode << "exit code:" << exitCode;
+                failingDisks.append( name );
+                continue;
+            }
+        }
+
+        // 2. NVMe controller state check via sysfs
+        if ( name.startsWith( QStringLiteral( "nvme" ) ) )
+        {
+            int nIndex = name.indexOf( 'n', 4 );
+            QString ctrlName = ( nIndex > 0 ) ? name.left( nIndex ) : name;
+            QFile ctrlStateFile( QStringLiteral( "/sys/class/nvme/%1/state" ).arg( ctrlName ) );
+            if ( ctrlStateFile.open( QIODevice::ReadOnly | QIODevice::Text ) )
+            {
+                QString state = ctrlStateFile.readAll().trimmed().toLower();
+                if ( !state.isEmpty() && state != QStringLiteral( "live" ) && state != QStringLiteral( "new" ) )
+                {
+                    cWarning() << "NVMe controller" << ctrlName << "in unhealthy state:" << state;
+                    failingDisks.append( name );
+                    continue;
+                }
+            }
+        }
+
+        // 3. SCSI / SATA device state check via sysfs
+        QFile devStateFile( blockDir.absoluteFilePath( name + QStringLiteral( "/device/state" ) ) );
+        if ( devStateFile.open( QIODevice::ReadOnly | QIODevice::Text ) )
+        {
+            QString state = devStateFile.readAll().trimmed().toLower();
+            if ( state == QStringLiteral( "offline" ) || state == QStringLiteral( "blocked" )
+                 || state == QStringLiteral( "quiesce" ) || state == QStringLiteral( "fail" ) )
+            {
+                cWarning() << "SCSI/SATA device" << name << "in unhealthy state:" << state;
+                failingDisks.append( name );
+                continue;
+            }
+        }
+    }
+
+    if ( !failingDisks.isEmpty() )
+    {
+        m_failedDiskDetails = failingDisks.join( QStringLiteral( ", " ) );
+        return false;
+    }
+
+    return true;
 }

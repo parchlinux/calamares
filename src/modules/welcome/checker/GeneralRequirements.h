@@ -37,12 +37,14 @@ private:
     bool checkHasInternet();
     bool checkIsRoot();
     bool checkSecureBoot();
+    bool checkDiskHealth();
 
     int getBatteryPercentage();
 
     qreal m_requiredStorageGiB;
     qreal m_requiredRamGiB;
     int m_batteryPercentage = -1;
+    QString m_failedDiskDetails;
 };
 
 #endif  // REQUIREMENTSCHECKER_H
