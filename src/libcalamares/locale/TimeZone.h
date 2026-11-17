@@ -224,6 +224,8 @@ class DLLEXPORT RegionalZonesModel : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY( QString region READ region WRITE setRegion NOTIFY regionChanged )
+    Q_PROPERTY( QString filter READ filter WRITE setFilter NOTIFY filterChanged )
+    Q_PROPERTY( bool filterAllRegions READ filterAllRegions WRITE setFilterAllRegions NOTIFY filterAllRegionsChanged )
 
 public:
     RegionalZonesModel( ZonesModel* source, QObject* parent = nullptr );
@@ -232,16 +234,24 @@ public:
     bool filterAcceptsRow( int sourceRow, const QModelIndex& sourceParent ) const override;
 
     QString region() const { return m_region; }
+    QString filter() const { return m_filter; }
+    bool filterAllRegions() const { return m_filterAllRegions; }
 
 public Q_SLOTS:
     void setRegion( const QString& r );
+    void setFilter( const QString& f );
+    void setFilterAllRegions( bool all );
 
 signals:
     void regionChanged( const QString& );
+    void filterChanged( const QString& );
+    void filterAllRegionsChanged( bool );
 
 private:
     Private* m_private;
     QString m_region;
+    QString m_filter;
+    bool m_filterAllRegions = true;
 };
 
 }  // namespace Locale

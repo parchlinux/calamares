@@ -369,7 +369,7 @@ ZonesModel::data( const QModelIndex& index, int role ) const
 QHash< int, QByteArray >
 ZonesModel::roleNames() const
 {
-    return { { NameRole, "name" }, { KeyRole, "key" } };
+    return { { NameRole, "name" }, { KeyRole, "key" }, { RegionRole, "region" } };
 }
 
 const TimeZoneData*
@@ -506,21 +506,64 @@ RegionalZonesModel::setRegion( const QString& r )
     }
 }
 
+void
+RegionalZonesModel::setFilter( const QString& f )
+{
+    if ( f != m_filter )
+    {
+        m_filter = f.trimmed();
+        invalidateFilter();
+        emit filterChanged( m_filter );
+    }
+}
+
+void
+RegionalZonesModel::setFilterAllRegions( bool all )
+{
+    if ( all != m_filterAllRegions )
+    {
+        m_filterAllRegions = all;
+        invalidateFilter();
+        emit filterAllRegionsChanged( all );
+    }
+}
+
 bool
 RegionalZonesModel::filterAcceptsRow( int sourceRow, const QModelIndex& ) const
 {
-    if ( m_region.isEmpty() )
-    {
-        return true;
-    }
-
     if ( sourceRow < 0 || sourceRow >= m_private->m_zones.count() )
     {
         return false;
     }
 
-    const auto& zone = m_private->m_zones[ sourceRow ];
-    return ( zone->m_region == m_region );
+    const auto* zone = m_private->m_zones[ sourceRow ];
+
+    if ( !m_filter.isEmpty() )
+    {
+        const bool matchFilter = zone->zone().contains( m_filter, Qt::CaseInsensitive )
+            || zone->translated().contains( m_filter, Qt::CaseInsensitive )
+            || zone->region().contains( m_filter, Qt::CaseInsensitive )
+            || zone->country().contains( m_filter, Qt::CaseInsensitive );
+
+        if ( !matchFilter )
+        {
+            return false;
+        }
+
+        if ( !m_filterAllRegions && !m_region.isEmpty() && zone->region() != m_region )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    if ( m_region.isEmpty() )
+    {
+        return true;
+    }
+
+    return ( zone->region() == m_region );
 }
 
 }  // namespace Locale
