@@ -94,6 +94,7 @@ class PLUGINDLLEXPORT Config : public Calamares::ModuleSystem::Config
     Q_PROPERTY( QString autoLoginGroup READ autoLoginGroup WRITE setAutoLoginGroup NOTIFY autoLoginGroupChanged )
     Q_PROPERTY( QString sudoersGroup READ sudoersGroup WRITE setSudoersGroup NOTIFY sudoersGroupChanged )
 
+    Q_PROPERTY( bool displayAutoLogin READ displayAutoLogin CONSTANT )
     Q_PROPERTY( bool doAutoLogin READ doAutoLogin WRITE setAutoLogin NOTIFY autoLoginChanged )
 
     Q_PROPERTY( QString fullName READ fullName WRITE setFullName NOTIFY fullNameChanged )

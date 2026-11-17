@@ -397,6 +397,7 @@ Kirigami.ScrollablePage {
         }
 
         CheckBox {
+            visible: config.displayAutoLogin
             Layout.alignment: Qt.AlignCenter
             text: qsTr("Log in automatically without asking for the password")
             checked: config.doAutoLogin
