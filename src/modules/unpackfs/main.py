@@ -153,6 +153,11 @@ def global_excludes():
         if mount_point:
             lst.extend(['--exclude', mount_point + '/'])
 
+    # Non-destructive refresh / preserve home support
+    if libcalamares.globalstorage.value("reuseHome") or libcalamares.globalstorage.value("refreshInstall"):
+        libcalamares.utils.debug("Non-destructive install mode active: preserving /home contents from being overwritten.")
+        lst.extend(['--exclude', '/home/*'])
+
     return lst
 
 def file_copy(source, entry, progress_cb):

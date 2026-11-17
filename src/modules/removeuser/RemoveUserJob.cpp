@@ -42,10 +42,16 @@ RemoveUserJob::exec()
     }
 
     auto* s = Calamares::System::instance();
-    auto r = s->targetEnvCommand( { QStringLiteral( "userdel" ),
-                                    QStringLiteral( "-f" ),  // force
-                                    QStringLiteral( "-r" ),  // remove home-dir and mail
-                                    m_username } );
+    bool reuseHome = Calamares::JobQueue::instance()->globalStorage()->value( "reuseHome" ).toBool()
+        || Calamares::JobQueue::instance()->globalStorage()->value( "refreshInstall" ).toBool();
+    QStringList cmd = { QStringLiteral( "userdel" ), QStringLiteral( "-f" ) };
+    if ( !reuseHome )
+    {
+        cmd << QStringLiteral( "-r" );
+    }
+    cmd << m_username;
+
+    auto r = s->targetEnvCommand( cmd );
     if ( r.getExitCode() != 0 )
     {
         cWarning() << "Cannot remove user" << m_username << "userdel terminated with exit code" << r.getExitCode();
