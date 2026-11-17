@@ -60,30 +60,32 @@ def get_live_user():
 
 def replace_username(nm_config_filename, live_user, target_user):
     """
-    If @p live_user isn't None, then go through the given
-    file and replace @p live_user by the @p target_user.
-
-    Reads the file, then (re-)writes it with new permissions lives.
+    Ensure the NetworkManager connection is usable by the target user.
+    If permissions are restricted to a user, update it to target_user,
+    or make it available system-wide.
     """
-    # FIXME: Perhaps if live_user is None, we should just replace **all**
-    #        permissions lines? After all, this is supposed to be a live
-    #        system so **whatever** NM networks are configured, should be
-    #        available to the new user.
-    if live_user is None:
-        return
     if not os.path.exists(nm_config_filename):
         return
 
-    with open(nm_config_filename, "r", encoding="UTF-8") as network_conf:
-        text = network_conf.readlines()
+    try:
+        with open(nm_config_filename, "r", encoding="UTF-8") as network_conf:
+            lines = network_conf.readlines()
 
-    live_permissions = 'permissions=user:{}:;'.format(live_user)
-    target_permissions = 'permissions=user:{}:;\n'.format(target_user)
-    with open(nm_config_filename, "w", encoding="UTF-8") as network_conf:
-        for line in text:
-            if live_permissions in line:
-                line = target_permissions
-            network_conf.write(line)
+        new_lines = []
+        for line in lines:
+            if line.strip().startswith("permissions="):
+                if target_user:
+                    new_lines.append(f"permissions=user:{target_user}:;\n")
+                else:
+                    # No user specified, make connection available system-wide
+                    continue
+            else:
+                new_lines.append(line)
+
+        with open(nm_config_filename, "w", encoding="UTF-8") as network_conf:
+            network_conf.writelines(new_lines)
+    except Exception as e:
+        libcalamares.utils.warning(f"networkcfg: Error updating permissions in {nm_config_filename}: {e}")
 
 
 def path_pair(root_mount_point, relative_path):
@@ -108,9 +110,9 @@ def run():
 
     source_nm, target_nm = path_pair(root_mount_point, "etc/NetworkManager/system-connections/")
 
-    # Sanity checks.  We don't want to do anything if a network
-    # configuration already exists on the target
-    if os.path.exists(source_nm) and os.path.exists(target_nm):
+    # Carry over NetworkManager Wi-Fi and network connections from Live ISO
+    if os.path.exists(source_nm):
+        os.makedirs(target_nm, mode=0o700, exist_ok=True)
         for network in os.listdir(source_nm):
             # Skip LTSP live
             if network == "LTSP":
@@ -123,14 +125,32 @@ def run():
                 continue
 
             try:
-                shutil.copy(source_network, target_network, follow_symlinks=False)
+                shutil.copy2(source_network, target_network, follow_symlinks=False)
                 replace_username(target_network, live_user, user)
-            except FileNotFoundError:
-                libcalamares.utils.debug(
-                    "Can't copy network configuration files in {}".format(source_network)
-                    )
-            except FileExistsError:
-                pass
+                # NetworkManager requires strictly 0600 root:root permissions on keyfiles
+                os.chmod(target_network, 0o600)
+                os.chown(target_network, 0, 0)
+                libcalamares.utils.debug(f"networkcfg: Transferred connection '{network}' to target system.")
+            except Exception as e:
+                libcalamares.utils.debug(f"networkcfg: Could not transfer '{network}': {e}")
+
+    # Also carry over iwd Wi-Fi credentials if present
+    source_iwd = "/var/lib/iwd"
+    target_iwd = os.path.join(root_mount_point, "var/lib/iwd")
+    if os.path.exists(source_iwd):
+        psk_files = glob.glob(os.path.join(source_iwd, "*.psk"))
+        if psk_files:
+            try:
+                os.makedirs(target_iwd, mode=0o700, exist_ok=True)
+                for psk in psk_files:
+                    target_psk = os.path.join(target_iwd, os.path.basename(psk))
+                    if not os.path.exists(target_psk):
+                        shutil.copy2(psk, target_psk)
+                        os.chmod(target_psk, 0o600)
+                        os.chown(target_psk, 0, 0)
+                        libcalamares.utils.debug(f"networkcfg: Transferred iwd credential '{os.path.basename(psk)}'.")
+            except Exception as err:
+                libcalamares.utils.debug(f"networkcfg: Failed to transfer iwd PSK credentials: {err}")
 
     # Also install netplan files
     source_netplan = "/etc/netplan"
