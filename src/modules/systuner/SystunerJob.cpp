@@ -62,6 +62,12 @@ SystunerJob::exec()
         cWarning() << "Systuner: Failed to collect sysinfo, error code:" << rc;
     }
 
+    if ( QFile::exists( root + QStringLiteral( "/etc/systemd/zram-generator.conf" ) ) )
+    {
+        sysinfo.has_zram = true;
+        cDebug() << "Systuner: Detected zram-generator configuration in target system.";
+    }
+
     systuner_profile_t profile = SYSTUNER_PROFILE_DESKTOP;
     if ( m_profile == QStringLiteral( "auto" ) || m_profile.isEmpty() )
     {
