@@ -36,9 +36,13 @@ private:
     bool checkHasPower();
     bool checkHasInternet();
     bool checkIsRoot();
+    bool checkSecureBoot();
+
+    int getBatteryPercentage();
 
     qreal m_requiredStorageGiB;
     qreal m_requiredRamGiB;
+    int m_batteryPercentage = -1;
 };
 
 #endif  // REQUIREMENTSCHECKER_H

@@ -104,6 +104,7 @@ GeneralRequirements::checkRequirements()
     MaybeChecked hasPower;
     MaybeChecked hasInternet;
     MaybeChecked isRoot;
+    MaybeChecked secureBootDisabled;
     bool enoughScreen = availableSize.isValid() && ( availableSize.width() >= Calamares::windowMinimumWidth )
         && ( availableSize.height() >= Calamares::windowMinimumHeight );
 
@@ -134,6 +135,11 @@ GeneralRequirements::checkRequirements()
         isRoot = checkIsRoot();
     }
 
+    if ( m_entriesToCheck.contains( "secureboot" ) )
+    {
+        secureBootDisabled = checkSecureBoot();
+    }
+
     using TNum = Logger::DebugRow< const char*, qint64 >;
     using TR = Logger::DebugRow< const char*, MaybeChecked >;
     // clang-format off
@@ -144,7 +150,8 @@ GeneralRequirements::checkRequirements()
              << TR( "enoughRam", enoughRam )
              << TR( "hasPower", hasPower )
              << TR( "hasInternet", hasInternet )
-             << TR( "isRoot", isRoot );
+             << TR( "isRoot", isRoot )
+             << TR( "secureBootDisabled", secureBootDisabled );
     // clang-format on
 
     Calamares::RequirementsList checkEntries;
@@ -182,8 +189,23 @@ GeneralRequirements::checkRequirements()
         {
             checkEntries.append( { entry,
                                    [] { return tr( "is plugged in to a power source" ); },
-                                   [] { return tr( "The system is not plugged in to a power source." ); },
+                                   [ bat = m_batteryPercentage ]
+                                   {
+                                       if ( bat >= 0 && bat < 20 )
+                                       {
+                                           return tr( "The system is running on low battery (%1%). Please connect to AC power." ).arg( bat );
+                                       }
+                                       return tr( "The system is not plugged in to a power source." );
+                                   },
                                    hasPower,
+                                   required } );
+        }
+        else if ( entry == "secureboot" )
+        {
+            checkEntries.append( { entry,
+                                   [] { return tr( "Secure Boot is disabled" ); },
+                                   [] { return tr( "Secure Boot is enabled. Please disable Secure Boot in UEFI firmware settings before proceeding." ); },
+                                   secureBootDisabled,
                                    required } );
         }
         else if ( entry == "internet" )
@@ -472,33 +494,157 @@ GeneralRequirements::checkBatteryExists()
     return false;
 }
 
+int
+GeneralRequirements::getBatteryPercentage()
+{
+    const QDir powerSupplyDir( QStringLiteral( "/sys/class/power_supply" ) );
+    if ( !powerSupplyDir.exists() )
+    {
+        return -1;
+    }
+
+    const auto entries = powerSupplyDir.entryList( QDir::Dirs | QDir::NoDotAndDotDot );
+    for ( const auto& name : entries )
+    {
+        if ( name.startsWith( QStringLiteral( "BAT" ), Qt::CaseInsensitive ) )
+        {
+            QFile capFile( powerSupplyDir.absoluteFilePath( name + QStringLiteral( "/capacity" ) ) );
+            if ( capFile.open( QIODevice::ReadOnly | QIODevice::Text ) )
+            {
+                bool ok = false;
+                int cap = capFile.readAll().trimmed().toInt( &ok );
+                if ( ok )
+                {
+                    return cap;
+                }
+            }
+        }
+    }
+    return -1;
+}
+
 bool
 GeneralRequirements::checkHasPower()
 {
-    const QString UPOWER_SVC_NAME( "org.freedesktop.UPower" );
-    const QString UPOWER_INTF_NAME( "org.freedesktop.UPower" );
-    const QString UPOWER_PATH( "/org/freedesktop/UPower" );
-
     if ( !checkBatteryExists() )
     {
         return true;
     }
 
-    cDebug() << "A battery exists, checking for mains power.";
-    QDBusInterface upowerIntf( UPOWER_SVC_NAME, UPOWER_PATH, UPOWER_INTF_NAME, QDBusConnection::systemBus() );
+    cDebug() << "A battery exists, checking power status and capacity.";
 
-    bool onBattery = upowerIntf.property( "OnBattery" ).toBool();
+    // Check sysfs AC online status
+    const QDir powerSupplyDir( QStringLiteral( "/sys/class/power_supply" ) );
+    bool acOnline = false;
+    bool checkedAc = false;
 
-    if ( !upowerIntf.isValid() )
+    if ( powerSupplyDir.exists() )
     {
-        // We can't talk to upower but we're obviously up and running
-        // so I guess we got that going for us, which is nice...
+        const auto entries = powerSupplyDir.entryList( QDir::Dirs | QDir::NoDotAndDotDot );
+        for ( const auto& name : entries )
+        {
+            QFileInfo typeFile( powerSupplyDir.absoluteFilePath( name + QStringLiteral( "/type" ) ) );
+            QFile tf( typeFile.absoluteFilePath() );
+            if ( tf.open( QIODevice::ReadOnly | QIODevice::Text ) )
+            {
+                QString type = QString::fromUtf8( tf.readAll() ).trimmed();
+                if ( type == QStringLiteral( "Mains" ) )
+                {
+                    QFile onlineFile( powerSupplyDir.absoluteFilePath( name + QStringLiteral( "/online" ) ) );
+                    if ( onlineFile.open( QIODevice::ReadOnly | QIODevice::Text ) )
+                    {
+                        checkedAc = true;
+                        if ( onlineFile.readAll().trimmed() == QStringLiteral( "1" ) )
+                        {
+                            acOnline = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    m_batteryPercentage = getBatteryPercentage();
+
+    if ( checkedAc )
+    {
+        if ( acOnline )
+        {
+            return true;
+        }
+        // If unplugged and battery is critically low (< 20%), warn user
+        if ( m_batteryPercentage >= 0 && m_batteryPercentage < 20 )
+        {
+            cWarning() << "System is unplugged and battery is critically low:" << m_batteryPercentage << "%";
+            return false;
+        }
+        return false;
+    }
+
+    // Fallback to UPower DBus if sysfs AC was not conclusive
+    const QString UPOWER_SVC_NAME( "org.freedesktop.UPower" );
+    const QString UPOWER_INTF_NAME( "org.freedesktop.UPower" );
+    const QString UPOWER_PATH( "/org/freedesktop/UPower" );
+
+    QDBusInterface upowerIntf( UPOWER_SVC_NAME, UPOWER_PATH, UPOWER_INTF_NAME, QDBusConnection::systemBus() );
+    if ( upowerIntf.isValid() )
+    {
+        bool onBattery = upowerIntf.property( "OnBattery" ).toBool();
+        if ( onBattery )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool
+GeneralRequirements::checkSecureBoot()
+{
+    // If not booted in EFI mode, Secure Boot does not apply (safe to continue)
+    if ( !QDir( QStringLiteral( "/sys/firmware/efi" ) ).exists() )
+    {
         return true;
     }
 
-    // If a battery exists but we're not using it, means we got mains
-    // power.
-    return !onBattery;
+    // Check efivars: SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
+    // Format: 4 bytes attributes + 1 byte data (1 = enabled, 0 = disabled)
+    QFile efivar( QStringLiteral( "/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c" ) );
+    if ( efivar.open( QIODevice::ReadOnly ) )
+    {
+        QByteArray data = efivar.readAll();
+        if ( data.size() >= 5 )
+        {
+            const bool enabled = ( data.at( 4 ) == 1 );
+            cDebug() << "Secure Boot efivar detected, enabled:" << enabled;
+            return !enabled;
+        }
+    }
+
+    // Legacy sysfs check: /sys/firmware/efi/vars/SecureBoot-*/data
+    QDir legacyDir( QStringLiteral( "/sys/firmware/efi/vars" ) );
+    if ( legacyDir.exists() )
+    {
+        const auto entries = legacyDir.entryList( QStringList() << QStringLiteral( "SecureBoot-*" ), QDir::Dirs );
+        for ( const auto& entry : entries )
+        {
+            QFile dataFile( legacyDir.absoluteFilePath( entry + QStringLiteral( "/data" ) ) );
+            if ( dataFile.open( QIODevice::ReadOnly ) )
+            {
+                QByteArray data = dataFile.readAll();
+                if ( !data.isEmpty() )
+                {
+                    const bool enabled = ( data.at( 0 ) == 1 );
+                    cDebug() << "Secure Boot legacy var detected, enabled:" << enabled;
+                    return !enabled;
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 bool
