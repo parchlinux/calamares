@@ -14,7 +14,14 @@
 #include "utils/Logger.h"
 #include "utils/Variant.h"
 
+#include <QClipboard>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QGuiApplication>
 #include <QProcess>
+#include <QStandardPaths>
+#include <QTextStream>
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusReply>
@@ -227,4 +234,68 @@ Config::setConfigurationMap( const QVariantMap& configurationMap )
     }
 
     m_notifyOnFinished = Calamares::getBool( configurationMap, "notifyOnFinished", false );
+}
+
+QString
+Config::saveLogToDesktop()
+{
+    QString desktopPath = QStandardPaths::writableLocation( QStandardPaths::DesktopLocation );
+    if ( desktopPath.isEmpty() || !QDir( desktopPath ).exists() )
+    {
+        for ( const auto& candidate : { QStringLiteral( "/home/parch/Desktop" ),
+                                       QStringLiteral( "/home/parch" ),
+                                       QDir::homePath() } )
+        {
+            if ( QDir( candidate ).exists() )
+            {
+                desktopPath = candidate;
+                break;
+            }
+        }
+    }
+
+    if ( desktopPath.isEmpty() )
+    {
+        desktopPath = QStringLiteral( "/tmp" );
+    }
+
+    QString targetFile = desktopPath + QStringLiteral( "/parch-install-error.log" );
+
+    QString sourceLog = Logger::logFile();
+    if ( sourceLog.isEmpty() || !QFile::exists( sourceLog ) )
+    {
+        sourceLog = QStringLiteral( "/root/.cache/calamares/session.log" );
+    }
+
+    QFile out( targetFile );
+    if ( out.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate ) )
+    {
+        QTextStream stream( &out );
+        stream << "=== Parch Linux Installation Failure Report ===\n";
+        stream << "Date: " << QDateTime::currentDateTime().toString( Qt::ISODate ) << "\n";
+        stream << "Failure Message: " << m_failureMessage << "\n";
+        stream << "Failure Details:\n" << m_failureDetails << "\n";
+        stream << "================================================\n\n";
+
+        QFile src( sourceLog );
+        if ( src.open( QIODevice::ReadOnly ) )
+        {
+            stream << src.readAll();
+            src.close();
+        }
+        out.close();
+
+        if ( QGuiApplication::clipboard() )
+        {
+            QGuiApplication::clipboard()->setText(
+                QStringLiteral( "Parch Linux Install Error:\n%1\n\nDetails:\n%2\n\nLog saved to: %3" )
+                    .arg( m_failureMessage, m_failureDetails, targetFile ) );
+        }
+
+        cDebug() << "Successfully exported installation failure log to" << targetFile;
+        return targetFile;
+    }
+
+    cWarning() << "Failed to export installation failure log to" << targetFile;
+    return QString();
 }

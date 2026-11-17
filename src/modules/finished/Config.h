@@ -64,6 +64,8 @@ public Q_SLOTS:
     /// Failure is if any of the failure messages is non-empty
     bool hasFailed() const { return !m_failureMessage.isEmpty() || !m_failureDetails.isEmpty(); }
 
+    Q_INVOKABLE QString saveLogToDesktop();
+
     /** @brief Run the restart command, if desired.
      *
      * This should generally not be called somewhere during the

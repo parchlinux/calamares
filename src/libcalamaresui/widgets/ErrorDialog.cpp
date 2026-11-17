@@ -10,9 +10,18 @@
 #include "ErrorDialog.h"
 #include "ui_ErrorDialog.h"
 
+#include "utils/Logger.h"
 #include "widgets/TranslationFix.h"
+#include <QClipboard>
+#include <QDateTime>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QFile>
+#include <QGuiApplication>
 #include <QIcon>
+#include <QPushButton>
+#include <QStandardPaths>
+#include <QTextStream>
 
 namespace Calamares
 {
@@ -25,6 +34,63 @@ ErrorDialog::ErrorDialog( QWidget* parent )
     ui->iconLabel->setPixmap( QIcon::fromTheme( "dialog-error" ).pixmap( 64 ) );
     ui->detailsWidget->hide();
     ui->offerWebPasteLabel->hide();
+
+    auto* saveLogBtn = ui->buttonBox->addButton( tr( "Save Log to Desktop" ), QDialogButtonBox::ActionRole );
+    connect( saveLogBtn, &QPushButton::clicked, this, [ this, saveLogBtn ] {
+        QString desktopPath = QStandardPaths::writableLocation( QStandardPaths::DesktopLocation );
+        if ( desktopPath.isEmpty() || !QDir( desktopPath ).exists() )
+        {
+            for ( const auto& candidate : { QStringLiteral( "/home/parch/Desktop" ),
+                                           QStringLiteral( "/home/parch" ),
+                                           QDir::homePath() } )
+            {
+                if ( QDir( candidate ).exists() )
+                {
+                    desktopPath = candidate;
+                    break;
+                }
+            }
+        }
+        if ( desktopPath.isEmpty() )
+        {
+            desktopPath = QStringLiteral( "/tmp" );
+        }
+        QString targetFile = desktopPath + QStringLiteral( "/parch-install-error.log" );
+
+        QString sourceLog = Logger::logFile();
+        if ( sourceLog.isEmpty() || !QFile::exists( sourceLog ) )
+        {
+            sourceLog = QStringLiteral( "/root/.cache/calamares/session.log" );
+        }
+
+        QFile out( targetFile );
+        if ( out.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate ) )
+        {
+            QTextStream stream( &out );
+            stream << "=== Parch Linux Installation Failure Report ===\n";
+            stream << "Date: " << QDateTime::currentDateTime().toString( Qt::ISODate ) << "\n";
+            stream << "Failure Message: " << informativeText() << "\n";
+            stream << "Failure Details:\n" << details() << "\n";
+            stream << "================================================\n\n";
+
+            QFile src( sourceLog );
+            if ( src.open( QIODevice::ReadOnly ) )
+            {
+                stream << src.readAll();
+                src.close();
+            }
+            out.close();
+
+            if ( QGuiApplication::clipboard() )
+            {
+                QGuiApplication::clipboard()->setText(
+                    QStringLiteral( "Parch Linux Install Error:\n%1\n\nDetails:\n%2\n\nLog saved to: %3" )
+                        .arg( informativeText(), details(), targetFile ) );
+            }
+            saveLogBtn->setText( tr( "Log Saved to Desktop!" ) );
+            saveLogBtn->setEnabled( false );
+        }
+    } );
 }
 
 ErrorDialog::~ErrorDialog()
