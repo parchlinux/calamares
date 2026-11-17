@@ -22,10 +22,15 @@
 #include "utils/Permissions.h"
 #include "utils/String.h"
 #include "utils/StringExpander.h"
+#include "utils/System.h"
 #include "utils/Variant.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMetaProperty>
 #include <QRegularExpression>
 #include <QTimer>
@@ -1110,4 +1115,158 @@ Config::createJobs() const
     jobs.append( Calamares::job_ptr( j ) );
 
     return jobs;
+}
+
+QVariantList
+Config::migrationProfiles()
+{
+    if ( !m_migrationScanned )
+    {
+        scanMigrationProfiles();
+    }
+    return m_migrationProfiles;
+}
+
+bool
+Config::hasMigrationProfiles()
+{
+    if ( !m_migrationScanned )
+    {
+        scanMigrationProfiles();
+    }
+    return !m_migrationProfiles.isEmpty();
+}
+
+void
+Config::setMigrationSelection( const QString& partition, const QString& profile, const QString& os, const QStringList& items )
+{
+    cDebug() << "Config::setMigrationSelection:" << partition << profile << os << items;
+    Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
+    if ( gs )
+    {
+        gs->insert( QStringLiteral( "migrationSourcePartition" ), partition );
+        gs->insert( QStringLiteral( "migrationSourceUser" ), profile );
+        gs->insert( QStringLiteral( "migrationOs" ), os );
+        gs->insert( QStringLiteral( "migrationItems" ), items );
+    }
+}
+
+void
+Config::scanMigrationProfiles()
+{
+    m_migrationScanned = true;
+    m_migrationProfiles.clear();
+
+    auto lsblkResult = Calamares::System::runCommand(
+        { "lsblk", "-J", "-o", "PATH,FSTYPE,LABEL,MOUNTPOINT" }, std::chrono::seconds( 5 ) );
+    if ( lsblkResult.getExitCode() != 0 )
+    {
+        return;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson( lsblkResult.getOutput().toUtf8() );
+    if ( !doc.isObject() )
+    {
+        return;
+    }
+
+    const QString tempProbePath = QStringLiteral( "/tmp/parch-mig-probe" );
+    QDir( QStringLiteral( "/tmp" ) ).mkdir( QStringLiteral( "parch-mig-probe" ) );
+
+    auto checkDev = [ this, &tempProbePath ]( const QJsonObject& devObj )
+    {
+        QString path = devObj.value( QStringLiteral( "path" ) ).toString();
+        QString fstype = devObj.value( QStringLiteral( "fstype" ) ).toString().toLower();
+        if ( path.isEmpty() || ( fstype != "ntfs" && fstype != "ext4" && fstype != "btrfs" ) )
+        {
+            return;
+        }
+
+        auto mountRes = Calamares::System::runCommand(
+            { "mount", "-o", "ro,noload", path, tempProbePath }, std::chrono::seconds( 3 ) );
+        if ( mountRes.getExitCode() != 0 )
+        {
+            mountRes = Calamares::System::runCommand(
+                { "mount", "-o", "ro", path, tempProbePath }, std::chrono::seconds( 3 ) );
+        }
+
+        if ( mountRes.getExitCode() == 0 )
+        {
+            // 1. Check for Windows Users directory
+            QDir usersDir( tempProbePath + QStringLiteral( "/Users" ) );
+            if ( usersDir.exists() )
+            {
+                const auto userEntries = usersDir.entryList( QDir::Dirs | QDir::NoDotAndDotDot );
+                for ( const auto& u : userEntries )
+                {
+                    if ( u.compare( QStringLiteral( "Public" ), Qt::CaseInsensitive ) == 0
+                         || u.compare( QStringLiteral( "Default" ), Qt::CaseInsensitive ) == 0
+                         || u.compare( QStringLiteral( "All Users" ), Qt::CaseInsensitive ) == 0
+                         || u.startsWith( QStringLiteral( "defaultuser" ), Qt::CaseInsensitive ) )
+                    {
+                        continue;
+                    }
+
+                    QVariantMap profile;
+                    profile[ QStringLiteral( "partition" ) ] = path;
+                    profile[ QStringLiteral( "os" ) ] = QStringLiteral( "Windows" );
+                    profile[ QStringLiteral( "user" ) ] = u;
+                    profile[ QStringLiteral( "hasDocuments" ) ] = QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/Documents" ) ) );
+                    profile[ QStringLiteral( "hasDownloads" ) ] = QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/Downloads" ) ) );
+                    profile[ QStringLiteral( "hasPictures" ) ] = QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/Pictures" ) ) );
+                    profile[ QStringLiteral( "hasMusic" ) ] = QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/Music" ) ) );
+                    profile[ QStringLiteral( "hasBookmarks" ) ] = QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/AppData/Local/Google/Chrome/User Data/Default/Bookmarks" ) ) )
+                        || QFile::exists( usersDir.absoluteFilePath( u + QStringLiteral( "/AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks" ) ) );
+
+                    m_migrationProfiles.append( profile );
+                }
+            }
+
+            // 2. Check for Linux home directory
+            QDir homeDir( tempProbePath + QStringLiteral( "/home" ) );
+            if ( homeDir.exists() )
+            {
+                const auto userEntries = homeDir.entryList( QDir::Dirs | QDir::NoDotAndDotDot );
+                for ( const auto& u : userEntries )
+                {
+                    if ( u == QStringLiteral( "lost+found" ) )
+                    {
+                        continue;
+                    }
+
+                    QVariantMap profile;
+                    profile[ QStringLiteral( "partition" ) ] = path;
+                    profile[ QStringLiteral( "os" ) ] = QStringLiteral( "Linux" );
+                    profile[ QStringLiteral( "user" ) ] = u;
+                    profile[ QStringLiteral( "hasDocuments" ) ] = QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/Documents" ) ) );
+                    profile[ QStringLiteral( "hasDownloads" ) ] = QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/Downloads" ) ) );
+                    profile[ QStringLiteral( "hasPictures" ) ] = QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/Pictures" ) ) );
+                    profile[ QStringLiteral( "hasMusic" ) ] = QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/Music" ) ) );
+                    profile[ QStringLiteral( "hasBookmarks" ) ] = QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/.config/google-chrome/Default/Bookmarks" ) ) )
+                        || QFile::exists( homeDir.absoluteFilePath( u + QStringLiteral( "/.mozilla" ) ) );
+
+                    m_migrationProfiles.append( profile );
+                }
+            }
+
+            Calamares::System::runCommand( { "umount", "-l", tempProbePath }, std::chrono::seconds( 2 ) );
+        }
+    };
+
+    std::function< void( const QJsonArray& ) > traverseDevices = [ & ]( const QJsonArray& arr )
+    {
+        for ( const auto& val : arr )
+        {
+            QJsonObject obj = val.toObject();
+            checkDev( obj );
+            if ( obj.contains( QStringLiteral( "children" ) ) )
+            {
+                traverseDevices( obj.value( QStringLiteral( "children" ) ).toArray() );
+            }
+        }
+    };
+
+    traverseDevices( doc.object().value( QStringLiteral( "blockdevices" ) ).toArray() );
+    cDebug() << "Migration Assistant: scanned and found" << m_migrationProfiles.size() << "candidate user profiles.";
+    emit migrationProfilesChanged();
 }

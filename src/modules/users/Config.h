@@ -127,6 +127,9 @@ class PLUGINDLLEXPORT Config : public Calamares::ModuleSystem::Config
 
     Q_PROPERTY( bool ready READ isReady NOTIFY readyChanged STORED false )
 
+    Q_PROPERTY( QVariantList migrationProfiles READ migrationProfiles NOTIFY migrationProfilesChanged )
+    Q_PROPERTY( bool hasMigrationProfiles READ hasMigrationProfiles NOTIFY migrationProfilesChanged )
+
 public:
     /** @brief Validity (status) of a password
      *
@@ -269,6 +272,11 @@ public:
     int homePermissions() const { return m_homeDirPermissions; }
     int homeUMask() const { return m_homeDirPermissions >= 0 ? ( ( ~m_homeDirPermissions ) & 0777 ) : -1; }
 
+    QVariantList migrationProfiles();
+    bool hasMigrationProfiles();
+    Q_INVOKABLE void setMigrationSelection( const QString& partition, const QString& profile, const QString& os, const QStringList& items );
+    void scanMigrationProfiles();
+
 public Q_SLOTS:
     /** @brief Sets the user's shell if possible
      *
@@ -331,6 +339,7 @@ signals:
     void rootPasswordSecondaryChanged( const QString& );
     void rootPasswordStatusChanged( int, const QString& );
     void readyChanged( bool ) const;
+    void migrationProfilesChanged();
 
 private:
     PasswordStatus passwordStatus( const QString&, const QString& ) const;
@@ -382,6 +391,9 @@ private:
     PasswordCheckList m_passwordChecks;
 
     int m_homeDirPermissions = -1;
+
+    QVariantList m_migrationProfiles;
+    bool m_migrationScanned = false;
 };
 
 #endif
