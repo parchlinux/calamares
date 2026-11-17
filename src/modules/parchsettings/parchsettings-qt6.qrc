@@ -1,0 +1,5 @@
+<RCC>
+    <qresource>
+        <file alias="parchsettings.qml">parchsettings-qt6.qml</file>
+    </qresource>
+</RCC>

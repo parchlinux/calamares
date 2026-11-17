@@ -1157,6 +1157,19 @@ Config::scanMigrationProfiles()
     m_migrationScanned = true;
     m_migrationProfiles.clear();
 
+    // The Parch Settings page can switch the migration assistant off;
+    // skip the (expensive) probe entirely in that case.
+    Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
+    if ( gs )
+    {
+        const QVariantMap parchSettings = gs->value( "parchSettings" ).toMap();
+        if ( parchSettings.contains( "migration" ) && !parchSettings.value( "migration" ).toBool() )
+        {
+            cDebug() << "Migration Assistant disabled on the Parch Settings page; skipping profile scan.";
+            return;
+        }
+    }
+
     auto lsblkResult = Calamares::System::runCommand(
         { "lsblk", "-J", "-o", "PATH,FSTYPE,LABEL,MOUNTPOINT" }, std::chrono::seconds( 5 ) );
     if ( lsblkResult.getExitCode() != 0 )

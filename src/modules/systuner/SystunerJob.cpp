@@ -18,6 +18,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QTextStream>
+#include <QVariantMap>
 
 SystunerJob::SystunerJob( QObject* parent )
     : Calamares::CppJob( parent )
@@ -77,6 +78,33 @@ SystunerJob::exec()
     }
 
     QString root = gs->value( "rootMountPoint" ).toString();
+
+    // The configuration map is frozen at module-load time, so the runtime
+    // overrides chosen on the Parch Settings page are applied here.
+    const QVariantMap parchSettings = gs->value( "parchSettings" ).toMap();
+    if ( parchSettings.contains( "hidpi" ) )
+    {
+        m_hidpiAutoscale = parchSettings.value( "hidpi" ).toBool();
+        cDebug() << "Systuner: hidpi autoscale override from Parch Settings:" << m_hidpiAutoscale;
+    }
+    if ( parchSettings.contains( "batteryGuard" ) )
+    {
+        m_batteryLongevity = parchSettings.value( "batteryGuard" ).toBool();
+        cDebug() << "Systuner: battery longevity override from Parch Settings:" << m_batteryLongevity;
+    }
+    if ( parchSettings.contains( "chargeLimit" ) )
+    {
+        const int limit = parchSettings.value( "chargeLimit" ).toInt();
+        if ( limit >= 50 && limit <= 100 )
+        {
+            m_batteryChargeLimit = limit;
+            cDebug() << "Systuner: battery charge limit override from Parch Settings:" << limit;
+        }
+        else
+        {
+            cWarning() << "Systuner: Ignoring out-of-range charge limit from Parch Settings:" << limit;
+        }
+    }
 
     systuner_sysinfo_t sysinfo;
     int rc = systuner_collect_sysinfo( &sysinfo );

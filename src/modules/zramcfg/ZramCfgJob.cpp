@@ -14,6 +14,7 @@
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
+#include <QVariantMap>
 
 ZramCfgJob::ZramCfgJob( QObject* parent )
     : Calamares::CppJob( parent )
@@ -60,6 +61,14 @@ ZramCfgJob::exec()
 
     QString root = gs->value( "rootMountPoint" ).toString();
 
+    // Respect the Parch Settings page: zram stays off when disabled there.
+    const QVariantMap parchSettings = gs->value( "parchSettings" ).toMap();
+    if ( parchSettings.contains( "zram" ) && !parchSettings.value( "zram" ).toBool() )
+    {
+        cDebug() << "zramcfg: zram disabled on the Parch Settings page. Skipping.";
+        return Calamares::JobResult::ok();
+    }
+
     // Check if on-disk swap was configured
     bool hasDiskSwap = false;
 
@@ -69,6 +78,7 @@ ZramCfgJob::exec()
         QVariantMap choices = gs->value( "partitionChoices" ).toMap();
         QString swapChoice = choices.value( "swap" ).toString().trimmed().toLower();
         if ( swapChoice == QStringLiteral( "file" ) ||
+             swapChoice == QStringLiteral( "file-hibernate" ) ||
              swapChoice == QStringLiteral( "small" ) ||
              swapChoice == QStringLiteral( "suspend" ) )
         {

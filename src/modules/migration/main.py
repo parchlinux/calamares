@@ -22,6 +22,14 @@ def pretty_name():
 
 def run():
     gs = libcalamares.globalstorage
+
+    # Respect the Parch Settings page: the assistant is skipped entirely
+    # when switched off there. A missing map keeps the previous behavior.
+    parch_settings = gs.value("parchSettings") or {}
+    if isinstance(parch_settings, dict) and parch_settings.get("migration") is False:
+        libcalamares.utils.debug("Migration Assistant: Disabled on the Parch Settings page. Skipping.")
+        return None
+
     source_partition = gs.value("migrationSourcePartition")
     source_user = gs.value("migrationSourceUser")
     migration_items = gs.value("migrationItems")

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Parch Linux
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+type: object
+properties:
+    defaults:
+        type: object
+        properties:
+            migration: { type: boolean }
+            windowsRtc: { type: string, enum: [auto, localtime, utc] }
+            hidpi: { type: boolean }
+            batteryGuard: { type: boolean }
+            chargeLimit: { type: integer, minimum: 50, maximum: 100 }
+            zram: { type: boolean }

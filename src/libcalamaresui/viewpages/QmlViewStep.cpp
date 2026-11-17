@@ -92,7 +92,10 @@ installQuickWidgetFocusBridge( QQuickWidget* quickWidget )
                 quickWidget->window()->windowHandle()->requestActivate();
             }
         }
-    }, Qt::UniqueConnection );
+    } );
+    // NOTE: no Qt::UniqueConnection here — it is not supported for lambdas
+    // and asserts in debug builds ("requires the slot to be a pointer to a
+    // member function"); the bridge is installed once per QQuickWidget.
 }
 
 namespace Calamares

@@ -61,12 +61,30 @@ def run():
     """
     Set hardware clock.
     If Windows dual-boot is detected, configure RTC to localtime to prevent
-    clock desynchronization between Windows and Linux.
+    clock desynchronization between Windows and Linux. The Parch Settings
+    page can force a mode with `parchSettings.windowsRtc`:
+    auto (default, detection above), localtime, or utc.
     """
-    windows_present = is_windows_detected()
-    if windows_present:
+    global_storage = libcalamares.globalstorage
+
+    rtc_mode = "auto"
+    parch_settings = global_storage.value("parchSettings") or {}
+    if isinstance(parch_settings, dict):
+        mode = str(parch_settings.get("windowsRtc", "auto") or "auto").lower()
+        if mode in ("auto", "localtime", "utc"):
+            rtc_mode = mode
+        else:
+            libcalamares.utils.warning(f"Unknown windowsRtc mode '{mode}', falling back to auto.")
+
+    if rtc_mode == "auto":
+        windows_present = is_windows_detected()
+        rtc_mode = "localtime" if windows_present else "utc"
+    else:
+        libcalamares.utils.debug(f"Parch Settings: hardware clock mode forced to {rtc_mode}.")
+
+    if rtc_mode == "localtime":
         libcalamares.utils.debug(
-            "Windows installation detected: configuring RTC for localtime to prevent dual-boot clock drift."
+            "Configuring RTC for localtime to prevent dual-boot clock drift."
         )
         clock_mode = "--localtime"
         try:
@@ -108,11 +126,12 @@ def run():
     if is_broken_rtc and is_broken_isa:
         libcalamares.utils.debug("BIOS or Kernel BUG: Setting hwclock failed.")
 
-    # Ensure /etc/adjtime in target reflects LOCAL or UTC correctly
+    # Ensure /etc/adjtime in target reflects LOCAL when the hardware
+    # clock runs in localtime (forced or Windows dual-boot detection).
     root_mount_point = libcalamares.globalstorage.value("rootMountPoint")
     if root_mount_point:
         adjtime_path = os.path.join(root_mount_point, "etc/adjtime")
-        if windows_present:
+        if rtc_mode == "localtime":
             adjtime_content = "0.0 0 0\n0\nLOCAL\n"
             try:
                 with open(adjtime_path, "w") as f:
