@@ -227,6 +227,12 @@ def modify_grub_default(partitions, root_mount_point, distributor):
 
     if swap_uuid:
         kernel_params.append(f"resume=UUID={swap_uuid}")
+    elif libcalamares.globalstorage.contains("swapfileResumeUuid") and libcalamares.globalstorage.contains("swapfileResumeOffset"):
+        resume_uuid = libcalamares.globalstorage.value("swapfileResumeUuid")
+        resume_offset = libcalamares.globalstorage.value("swapfileResumeOffset")
+        if resume_uuid and resume_offset:
+            kernel_params.append(f"resume=UUID={resume_uuid}")
+            kernel_params.append(f"resume_offset={resume_offset}")
 
     if use_systemd_naming and swap_outer_uuid:
         kernel_params.append(f"rd.luks.uuid={swap_outer_uuid}")
@@ -254,7 +260,7 @@ def modify_grub_default(partitions, root_mount_point, distributor):
                         if param.split("=")[0].strip() == existing_param_name:
                             param_exists = True
                             break
-                    if not param_exists and existing_param_name not in ["quiet", "resume", "splash"]:
+                    if not param_exists and existing_param_name not in ["quiet", "resume", "resume_offset", "splash"]:
                         kernel_params.append(existing_param)
 
             elif line.startswith("GRUB_DISTRIBUTOR") and libcalamares.job.configuration.get("keep_distributor", False):

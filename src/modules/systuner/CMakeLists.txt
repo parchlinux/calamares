@@ -13,3 +13,5 @@ calamares_add_plugin(systuner
         tuner.c
     SHARED_LIB
 )
+
+target_link_libraries(calamares_job_systuner PRIVATE ${qtname}::Gui)

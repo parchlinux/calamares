@@ -11,6 +11,7 @@
 #include "CppJob.h"
 #include "DllMacro.h"
 #include "utils/PluginFactory.h"
+#include "systuner.h"
 
 #include <QObject>
 #include <QVariantMap>
@@ -30,7 +31,13 @@ public:
     void setConfigurationMap( const QVariantMap& configurationMap ) override;
 
 private:
+    void configureBatteryLongevity( const QString& root, const systuner_sysinfo_t& sysinfo );
+    void configureHiDPI( const QString& root );
+
     QString m_profile;
+    bool m_hidpiAutoscale = true;
+    bool m_batteryLongevity = true;
+    int m_batteryChargeLimit = 80;
 };
 
 CALAMARES_PLUGIN_FACTORY_DECLARATION( SystunerJobFactory )

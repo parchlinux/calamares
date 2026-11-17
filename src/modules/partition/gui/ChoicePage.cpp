@@ -208,7 +208,8 @@ createCombo( const QSet< SwapChoice >& s, SwapChoice dflt )
                            SwapChoice::SmallSwap,
                            SwapChoice::FullSwap,
                            SwapChoice::ReuseSwap,
-                           SwapChoice::SwapFile } )
+                           SwapChoice::SwapFile,
+                           SwapChoice::SwapFileHibernate } )
     {
         if ( s.contains( c ) )
         {
@@ -1661,6 +1662,9 @@ ChoicePage::updateSwapChoicesTr()
             break;
         case SwapChoice::SwapFile:
             m_eraseSwapChoiceComboBox->setItemText( index, tr( "Swap to file", "@label" ) );
+            break;
+        case SwapChoice::SwapFileHibernate:
+            m_eraseSwapChoiceComboBox->setItemText( index, tr( "Swap to file (with Hibernate)", "@label" ) );
             break;
         default:
             cWarning() << "Box item" << index << m_eraseSwapChoiceComboBox->itemText( index ) << "has role" << value;

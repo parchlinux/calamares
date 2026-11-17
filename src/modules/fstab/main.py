@@ -329,13 +329,65 @@ class FstabGenerator(object):
             return "defaults"
 
 
-def create_swapfile(root_mount_point, root_btrfs):
+def get_total_ram_bytes():
+    """
+    Returns total system memory in bytes.
+    """
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    parts = line.split()
+                    return int(parts[1]) * 1024
+    except Exception:
+        pass
+    return 4 * 1024 * 1024 * 1024
+
+
+def get_swapfile_resume_offset(swapfile_path, is_btrfs):
+    """
+    Returns the physical resume_offset string for hibernation.
+    Uses btrfs inspect-internal for btrfs, and filefrag -v for ext4/xfs.
+    """
+    if is_btrfs:
+        try:
+            res = libcalamares.utils.host_env_process_output(
+                ["btrfs", "inspect-internal", "map-swapfile", "-r", swapfile_path]
+            )
+            offset = res.strip()
+            if offset.isdigit():
+                return offset
+        except Exception as e:
+            libcalamares.utils.debug(f"btrfs inspect-internal map-swapfile: {e}")
+
+    try:
+        res = libcalamares.utils.host_env_process_output(
+            ["filefrag", "-v", swapfile_path]
+        )
+        for line in res.splitlines():
+            line = line.strip()
+            if line.startswith("0:"):
+                parts = line.split(":")
+                if len(parts) >= 3:
+                    physical_part = parts[2].strip()
+                    offset = physical_part.split("..")[0].strip()
+                    if offset.isdigit():
+                        return offset
+    except Exception as e:
+        libcalamares.utils.debug(f"filefrag failed: {e}")
+
+    return None
+
+
+def create_swapfile(root_mount_point, root_btrfs, with_hibernate=False, partitions=None):
     """
     Creates /swapfile in @p root_mount_point ; if the root filesystem
     is on btrfs, then handle some btrfs specific features as well,
     as documented in
         https://wiki.archlinux.org/index.php/Swap#Swap_file
 
+    If @p with_hibernate is True, size the swapfile for full system memory
+    and compute the kernel resume offset.
     The swapfile-creation covers progress from 0.2 to 0.5
     """
     libcalamares.job.setprogress(0.2)
@@ -349,20 +401,60 @@ def create_swapfile(root_mount_point, root_btrfs):
         swapfile_path = os.path.join(root_mount_point, "swapfile")
         with open(swapfile_path, "wb") as f:
             pass
-    # Create the swapfile; swapfiles are small-ish
-    zeroes = bytes(16384)
+
+    if with_hibernate:
+        total_ram = get_total_ram_bytes()
+        desired_size = total_ram + (512 * 1024 * 1024)
+        libcalamares.utils.debug(
+            f"Creating hibernate-capable swapfile of size {desired_size // (1024 * 1024)} MiB"
+        )
+    else:
+        desired_size = 512 * 1024 * 1024  # 512MiB
+
+    chunk_size = 1024 * 1024  # 1 MiB chunk
+    zeroes = bytes(chunk_size)
     with open(swapfile_path, "wb") as f:
         total = 0
-        desired_size = 512 * 1024 * 1024  # 512MiB
         while total < desired_size:
-            chunk = f.write(zeroes)
+            to_write = min(chunk_size, desired_size - total)
+            chunk = f.write(zeroes[:to_write])
             if chunk < 1:
                 libcalamares.utils.debug("Short write on {!s}, cancelling.".format(swapfile_path))
                 break
-            libcalamares.job.setprogress(0.2 + 0.3 * ( total / desired_size ) )
             total += chunk
+            libcalamares.job.setprogress(0.2 + 0.25 * (total / desired_size))
+
     os.chmod(swapfile_path, 0o600)
     libcalamares.utils.host_env_process_output(["mkswap", swapfile_path])
+
+    if with_hibernate and partitions:
+        offset = get_swapfile_resume_offset(swapfile_path, root_btrfs)
+        root_uuid = None
+        for p in partitions:
+            if p.get("mountPoint") == "/":
+                root_uuid = p.get("uuid")
+                if not root_uuid and p.get("device"):
+                    try:
+                        out = libcalamares.utils.host_env_process_output(
+                            ["blkid", "-s", "UUID", "-o", "value", p["device"]]
+                        ).strip()
+                        if out:
+                            root_uuid = out
+                    except Exception:
+                        pass
+                break
+
+        if offset and root_uuid:
+            libcalamares.globalstorage.insert("swapfileResumeUuid", root_uuid)
+            libcalamares.globalstorage.insert("swapfileResumeOffset", offset)
+            libcalamares.utils.debug(
+                f"Configured swapfile hibernation: resume=UUID={root_uuid} resume_offset={offset}"
+            )
+        else:
+            libcalamares.utils.warning(
+                f"Could not calculate swapfile resume parameters (offset={offset}, root_uuid={root_uuid})"
+            )
+
     libcalamares.job.setprogress(0.5)
 
 
@@ -393,7 +485,7 @@ def run():
     swap_choice = global_storage.value( "partitionChoices" )
     if swap_choice:
         swap_choice = swap_choice.get( "swap", None )
-        if swap_choice and swap_choice == "file":
+        if swap_choice and swap_choice in ("file", "file-hibernate"):
             # There's no formatted partition for it, so we'll sneak in an entry
             root_partitions = [ p["fs"].lower() for p in partitions if p["mountPoint"] == "/" ]
             root_btrfs = (root_partitions[0] == "btrfs") if root_partitions else False
@@ -427,7 +519,12 @@ def run():
         libcalamares.job.setprogress(0.2)
         root_partitions = [ p["fs"].lower() for p in partitions if p["mountPoint"] == "/" ]
         root_btrfs = (root_partitions[0] == "btrfs") if root_partitions else False
-        create_swapfile(root_mount_point, root_btrfs)
+        create_swapfile(
+            root_mount_point,
+            root_btrfs,
+            with_hibernate=(swap_choice == "file-hibernate"),
+            partitions=partitions
+        )
 
     try:
         libcalamares.job.setprogress(0.5)

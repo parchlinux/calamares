@@ -235,7 +235,12 @@ def find_initcpio_features(partitions, root_mount_point):
     if uses_zfs:
         hooks.append("zfs")
 
-    if swap_uuid != "":
+    has_swapfile_hibernation = (
+        libcalamares.globalstorage.contains("swapfileResumeOffset")
+        and bool(libcalamares.globalstorage.value("swapfileResumeOffset"))
+    )
+
+    if swap_uuid != "" or has_swapfile_hibernation:
         if encrypt_hook and openswap_hook:
             hooks.extend(["openswap"])
         hooks.extend(["resume", "filesystems"])

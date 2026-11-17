@@ -64,7 +64,8 @@ public:
         ReuseSwap,  // don't create, but do use existing
         SmallSwap,  // up to 8GiB of swap
         FullSwap,  // ensureSuspendToDisk -- at least RAM size
-        SwapFile  // use a file (if supported)
+        SwapFile,  // use a file (if supported)
+        SwapFileHibernate  // use a swap file configured with hibernation and resume offset
     };
     Q_ENUM( SwapChoice )
     static const NamedEnumTable< SwapChoice >& swapChoiceNames();

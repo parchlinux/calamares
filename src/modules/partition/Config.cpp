@@ -52,6 +52,7 @@ Config::swapChoiceNames()
         { QStringLiteral( "suspend" ), SwapChoice::FullSwap },
         { QStringLiteral( "reuse" ), SwapChoice::ReuseSwap },
         { QStringLiteral( "file" ), SwapChoice::SwapFile },
+        { QStringLiteral( "file-hibernate" ), SwapChoice::SwapFileHibernate },
     };
     // clang-format on
     // *INDENT-ON*
@@ -219,7 +220,7 @@ Config::setInstallChoice( InstallChoice c )
 void
 Config::setSwapChoice( int c )
 {
-    if ( ( c < SwapChoice::NoSwap ) || ( c > SwapChoice::SwapFile ) )
+    if ( ( c < SwapChoice::NoSwap ) || ( c > SwapChoice::SwapFileHibernate ) )
     {
         cWarning() << "Invalid swap choice (int)" << c;
         c = SwapChoice::NoSwap;

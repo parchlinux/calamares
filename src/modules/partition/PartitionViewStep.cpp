@@ -252,6 +252,10 @@ PartitionViewStep::prettyStatus() const
     {
         jobsLabels.append( tr( "Create a swap file." ) );
     }
+    else if ( m_config->swapChoice() == Config::SwapChoice::SwapFileHibernate )
+    {
+        jobsLabels.append( tr( "Create a swap file with hibernate support." ) );
+    }
     return diskInfoLabel + "<br/>" + jobsLabels.join( QStringLiteral( "<br/>" ) );
 }
 
