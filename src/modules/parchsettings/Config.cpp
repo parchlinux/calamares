@@ -46,6 +46,8 @@ Config::setConfigurationMap( const QVariantMap& configurationMap )
     setBatteryGuardEnabled( Calamares::getBool( defaults, "batteryGuard", true ) );
     setChargeLimit( static_cast< int >( Calamares::getInteger( defaults, "chargeLimit", 80 ) ) );
     setZramEnabled( Calamares::getBool( defaults, "zram", true ) );
+
+    commitGlobalStorage();
 }
 
 void

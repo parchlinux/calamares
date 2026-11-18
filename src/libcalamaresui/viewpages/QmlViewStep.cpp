@@ -65,10 +65,12 @@ changeQMLState( QMLAction action, QQuickItem* item )
 static void
 installQuickWidgetFocusBridge( QQuickWidget* quickWidget )
 {
-    if ( !quickWidget )
+    if ( !quickWidget || quickWidget->property( "_calamares_focus_bridge_installed" ).toBool() )
     {
         return;
     }
+    quickWidget->setProperty( "_calamares_focus_bridge_installed", true );
+
     QQuickWindow* quickWindow = quickWidget->quickWindow();
     if ( !quickWindow )
     {
@@ -78,7 +80,8 @@ installQuickWidgetFocusBridge( QQuickWidget* quickWidget )
     QObject::connect( quickWindow, &QQuickWindow::focusObjectChanged,
                       quickWidget, [ quickWidget ]( QObject* focusObject )
     {
-        if ( !focusObject )
+        static bool inFocusBridge = false;
+        if ( inFocusBridge || !focusObject )
         {
             return;
         }
@@ -86,16 +89,19 @@ installQuickWidgetFocusBridge( QQuickWidget* quickWidget )
         QQuickItem* item = qobject_cast< QQuickItem* >( focusObject );
         if ( item && ( item->flags() & QQuickItem::ItemAcceptsInputMethod ) )
         {
-            quickWidget->setFocus( Qt::OtherFocusReason );
-            if ( quickWidget->window() && quickWidget->window()->windowHandle() )
+            inFocusBridge = true;
+            if ( !quickWidget->hasFocus() )
             {
-                quickWidget->window()->windowHandle()->requestActivate();
+                quickWidget->setFocus( Qt::OtherFocusReason );
             }
+            QWidget* topLevel = quickWidget->window();
+            if ( topLevel && !topLevel->isActiveWindow() && topLevel->windowHandle() )
+            {
+                topLevel->windowHandle()->requestActivate();
+            }
+            inFocusBridge = false;
         }
     } );
-    // NOTE: no Qt::UniqueConnection here — it is not supported for lambdas
-    // and asserts in debug builds ("requires the slot to be a pointer to a
-    // member function"); the bridge is installed once per QQuickWidget.
 }
 
 namespace Calamares
@@ -170,7 +176,6 @@ QmlViewStep::onActivate()
     }
     if ( m_qmlWidget )
     {
-        installQuickWidgetFocusBridge( m_qmlWidget );
         m_qmlWidget->setFocus( Qt::OtherFocusReason );
     }
 }

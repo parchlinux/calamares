@@ -61,6 +61,7 @@ void
 ParchSettingsViewStep::onLeave()
 {
     m_config->finalizeGlobalStorage();
+    Calamares::QmlViewStep::onLeave();
 }
 
 void

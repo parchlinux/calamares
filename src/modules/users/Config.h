@@ -272,10 +272,10 @@ public:
     int homePermissions() const { return m_homeDirPermissions; }
     int homeUMask() const { return m_homeDirPermissions >= 0 ? ( ( ~m_homeDirPermissions ) & 0777 ) : -1; }
 
-    QVariantList migrationProfiles();
-    bool hasMigrationProfiles();
+    QVariantList migrationProfiles() const { return m_migrationProfiles; }
+    bool hasMigrationProfiles() const { return !m_migrationProfiles.isEmpty(); }
     Q_INVOKABLE void setMigrationSelection( const QString& partition, const QString& profile, const QString& os, const QStringList& items );
-    void scanMigrationProfiles();
+    void scanMigrationProfiles( bool force = false );
 
 public Q_SLOTS:
     /** @brief Sets the user's shell if possible

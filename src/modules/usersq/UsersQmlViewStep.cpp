@@ -66,9 +66,17 @@ UsersQmlViewStep::jobs() const
 }
 
 void
+UsersQmlViewStep::onActivate()
+{
+    Calamares::QmlViewStep::onActivate();
+    m_config->scanMigrationProfiles();
+}
+
+void
 UsersQmlViewStep::onLeave()
 {
     m_config->finalizeGlobalStorage();
+    Calamares::QmlViewStep::onLeave();
 }
 
 void

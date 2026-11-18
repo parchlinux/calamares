@@ -1117,26 +1117,6 @@ Config::createJobs() const
     return jobs;
 }
 
-QVariantList
-Config::migrationProfiles()
-{
-    if ( !m_migrationScanned )
-    {
-        scanMigrationProfiles();
-    }
-    return m_migrationProfiles;
-}
-
-bool
-Config::hasMigrationProfiles()
-{
-    if ( !m_migrationScanned )
-    {
-        scanMigrationProfiles();
-    }
-    return !m_migrationProfiles.isEmpty();
-}
-
 void
 Config::setMigrationSelection( const QString& partition, const QString& profile, const QString& os, const QStringList& items )
 {
@@ -1152,11 +1132,8 @@ Config::setMigrationSelection( const QString& partition, const QString& profile,
 }
 
 void
-Config::scanMigrationProfiles()
+Config::scanMigrationProfiles( bool force )
 {
-    m_migrationScanned = true;
-    m_migrationProfiles.clear();
-
     // The Parch Settings page can switch the migration assistant off;
     // skip the (expensive) probe entirely in that case.
     Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
@@ -1165,10 +1142,24 @@ Config::scanMigrationProfiles()
         const QVariantMap parchSettings = gs->value( "parchSettings" ).toMap();
         if ( parchSettings.contains( "migration" ) && !parchSettings.value( "migration" ).toBool() )
         {
+            if ( !m_migrationProfiles.isEmpty() )
+            {
+                m_migrationProfiles.clear();
+                emit migrationProfilesChanged();
+            }
+            m_migrationScanned = true;
             cDebug() << "Migration Assistant disabled on the Parch Settings page; skipping profile scan.";
             return;
         }
     }
+
+    if ( m_migrationScanned && !force )
+    {
+        return;
+    }
+
+    m_migrationScanned = true;
+    m_migrationProfiles.clear();
 
     auto lsblkResult = Calamares::System::runCommand(
         { "lsblk", "-J", "-o", "PATH,FSTYPE,LABEL,MOUNTPOINT" }, std::chrono::seconds( 5 ) );
